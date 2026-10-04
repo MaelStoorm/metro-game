@@ -1,0 +1,17 @@
+{
+  "name": "Metro İstanbul",
+  "short_name": "Metro İstanbul",
+  "description": "İstanbul'un raylı sistem hatları ve metrobüsüyle hat çizme ve yolcu taşıma oyunu.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#E6EAE7",
+  "theme_color": "#1E2528",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
