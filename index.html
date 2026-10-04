@@ -143,6 +143,13 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--ink);outline-
 .ach{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;border:1px solid var(--rule);background:var(--land);border-radius:12px;padding:9px 12px;font-size:12.5px;line-height:1.3;color:var(--ink-2)}
 .ach b{display:block;font-size:14px;color:var(--ink)}.ach .ic{font-size:22px;text-align:center}.ach.no .ic{filter:grayscale(1);opacity:.45}.ach .c{color:var(--gold);font-weight:700;white-space:nowrap;font-size:13px}
 .ach .dbar{margin-top:5px}
+.board{border:1px solid var(--rule);background:var(--land);border-radius:12px;padding:10px 12px;margin:10px 0 12px;font-size:13px}
+.board h3{margin:0 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+.board ol{margin:0;padding:0;list-style:none;counter-reset:r}
+.board li{display:grid;grid-template-columns:22px 1fr auto;gap:8px;padding:4px 0;border-top:1px solid var(--rule);color:var(--ink-2);counter-increment:r}
+.board li:first-child{border-top:0}.board li::before{content:counter(r);font-weight:700;color:var(--ink)}
+.board li b{color:var(--ink);font-variant-numeric:tabular-nums}.board li.new{color:var(--ink);font-weight:600}
+.board .stars{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--rule)}
 .chap .n{color:var(--ink-2);font-size:11px}
 .choice{text-align:left;border:1px solid var(--rule);background:var(--land);border-radius:12px;padding:12px 14px;display:grid;gap:2px}
 .choice strong{font-family:var(--f-display);font-size:20px}
@@ -340,7 +347,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="primary" id="btnChaps">Bölümler</button>
         </div>
         <button class="secondary" id="btnNew" hidden>Yeni oyun başlat</button>
-        <button class="secondary" id="btnAch">🏆 Başarımlar · <span id="achCount">0</span></button>
+        <button class="secondary" id="btnAch">🏆 Skorlar ve başarımlar · <span id="achCount">0</span></button>
         <div class="row2">
           <button class="secondary" id="btnShop2">Mağaza · <span class="coin">₺</span><span id="coinIntro">0</span></button>
           <button class="secondary" id="btnSettings2">Ayarlar</button>
@@ -375,9 +382,10 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
 
   <div class="overlay" id="achModal" hidden>
     <div class="card" style="max-width:560px">
-      <span class="eyebrow">Başarımlar</span>
+      <span class="eyebrow">Skorlar ve başarımlar</span>
       <h2 id="achTitle">Başarımlar</h2>
       <div class="daily" id="dailyBox2"></div>
+      <div class="board" id="boardBox"></div>
       <div class="achs" id="achList"></div>
       <button class="secondary" id="btnAchClose" style="width:100%">Kapat</button>
     </div>
@@ -452,7 +460,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 2.8 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 2.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -550,11 +558,22 @@ const CFG = Object.assign({voice:'',english:true,vol:70,vehicle:true,announce:tr
 const saveCfg=()=>save('mi-cfg',CFG);
 const dif=()=>DIFF[CFG.diff]||DIFF.normal;
 function vib(p){if(!CFG.vibrate)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
-const P = {coins:load('mi-coins',0),owned:load('mi-owned',['klasik','std']),skin:load('mi-skin','klasik'),bus:load('mi-bus','std'),best:load('mi-best',0),chap:load('mi-chap',{})};
+const P = {coins:load('mi-coins',0),owned:load('mi-owned',['klasik','std']),skin:load('mi-skin','klasik'),bus:load('mi-bus','std'),best:load('mi-best',0),chap:load('mi-chap',{}),board:load('mi-board',[])};
 if(!P.owned.includes('std'))P.owned.push('std');
 // Gerçek tren setleri ücretsiz; bir kez varsayılan yapılır
 if(!P.owned.includes('gercek')){P.owned.push('gercek');if(P.skin==='klasik')P.skin='gercek';try{localStorage.setItem('mi-owned',JSON.stringify(P.owned));localStorage.setItem('mi-skin',JSON.stringify(P.skin))}catch(e){}}
-function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-skin',P.skin);save('mi-bus',P.bus);save('mi-best',P.best);save('mi-chap',P.chap)}
+function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-skin',P.skin);save('mi-bus',P.bus);save('mi-best',P.best);save('mi-chap',P.chap);save('mi-board',P.board)}
+// ---------- Skor tablosu: Oyna modundaki en iyi 10 oyun ----------
+function recordScore(){if(G.chap||G.score<=0)return -1;
+  // Reklamla devam edilen oyun aynı satırı günceller
+  P.board=P.board.filter(x=>x.id!==G.recId);G.recId=G.recId||Date.now();
+  const d=new Date(),e={s:G.score,l:G.level,w:G.week,df:CFG.diff,d:d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),id:G.recId};
+  P.board.push(e);P.board.sort((a,b)=>b.s-a.s);P.board=P.board.slice(0,10);lastBoard=e.id;return P.board.findIndex(x=>x.id===e.id)}
+let lastBoard=0;
+function renderBoard(){const B=P.board,DF={kolay:'kolay',normal:'normal',zor:'zor'};
+  const stars=Object.values(P.chap).reduce((a,r)=>a+(r.stars||0),0),done=Object.values(P.chap).filter(r=>r.stars>0).length;
+  $('#boardBox').innerHTML=`<h3>En iyi oyunların</h3>${B.length?`<ol>${B.map(e=>`<li class="${e.id===lastBoard?'new':''}"><span><b>${e.s}</b> puan · seviye ${e.l} · ${e.w}. hafta</span><span>${esc(e.d)}${e.df!=='normal'?' · '+esc(DF[e.df]||e.df):''}</span></li>`).join('')}</ol>`:'<p class="muted" style="margin:0">Henüz bitmiş oyun yok. Oyna modunda ilk oyununu bitir, skorun burada görünsün.</p>'}
+  <div class="stars"><span>Bölüm yıldızları</span><b>${'★'} ${stars}/${CHAPS.length*3} · ${done}/${CHAPS.length} bölüm</b></div>`}
 
 // ---------- Durum ----------
 let G, segLines=new Map(), adj=[], dist={};
@@ -708,7 +727,7 @@ function onDeliver(L,n,pv,S){ST.del+=n;const brt=L.mode==='brt',mr=L.id==='B1',c
   if(mr)ST.mr+=n;if(brt)ST.brt+=n;if(cr)ST.cross+=n;if(hourOf(G.t)<6)G.nightDel=(G.nightDel||0)+n;save('mi-stat',ST);
   dailyAdd('del',n);if(brt)dailyAdd('brt',n);if(mr)dailyAdd('mr',n);if(cr)dailyAdd('cross',n);dailyAdd('score',G.score);checkAch()}
 function renderAchCount(){$('#achCount').textContent=`${Object.keys(ACH_OK).length}/${ACH.length}`}
-function openAch(){renderDaily();const n=Object.keys(ACH_OK).length;$('#achTitle').textContent=`${n}/${ACH.length} başarım`;
+function openAch(){renderDaily();renderBoard();const n=Object.keys(ACH_OK).length;$('#achTitle').textContent=`${n}/${ACH.length} başarım`;
   $('#achList').innerHTML=[...ACH].sort((a,b)=>!!ACH_OK[b.id]-!!ACH_OK[a.id]).map(a=>{const ok=!!ACH_OK[a.id],pr=!ok&&a.p?a.p():null;
     return `<div class="ach${ok?'':' no'}"><span class="ic">${a.ic}</span><div><b>${esc(a.name)}</b>${esc(a.desc)}${pr?`<div class="dbar"><i style="width:${Math.min(100,pr[0]/pr[1]*100)}%"></i></div>`:''}</div><span class="c">${ok?'✓':'+'+a.c+' ₺'}</span></div>`}).join('');
   achWasPaused=G.paused;G.paused=true;$('#achModal').hidden=false;hud(true)}
@@ -823,16 +842,16 @@ function overflow(s){
 function focusOn(s){V.cx=s.x;V.cy=s.y;V.s=Math.max(V.s,40);setManual(true)}
 function endWith(s){G.over=true;G.overSt=s;focusOn(s);clearSave();setTimeout(()=>gameOver(s),1300)}
 function gameOver(s){
-  clearSave();G.over=true;G.overSt=s;P.best=Math.max(P.best,G.score);persist();
+  clearSave();G.over=true;G.overSt=s;const wasBest=G.score>P.best&&!G.chap;P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
   $('#overTitle').textContent=s.name+' taştı';$('#overScore').textContent=G.score;
-  $('#overText').textContent=G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${LABEL(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. En iyi puanın: ${P.best}.`;
+  $('#overText').textContent=G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${LABEL(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
   $('#btnAdCont').hidden=!!G.adUsed;$('#overModal').hidden=false;
   vib([80,60,160]);
 }
 // ---------- Kayıt: oyun her birkaç saniyede ve uygulamadan çıkarken kaydedilir; açılışta "Devam et" ile sürer ----------
 function clearSave(){try{localStorage.removeItem('mi-save')}catch(e){}}
 function saveGame(){if(!G||G.over||G.t<3)return;
-  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay'])g[k]=G[k];
+  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId'])g[k]=G[k];
   save('mi-save',{v:1,g,st:G.st.filter(s=>s.inPool||s.revealed).map(s=>[s.i,s.revealed?1:0,s.queue,+s.crowd.toFixed(3),+s.spawn.toFixed(2)]),
     lines:G.lines.map(L=>[L.id,L.unlocked?1:0,L.st.map(s=>s.i),L.trains.map(t=>[t.i,t.dir,+t.t.toFixed(3),+t.dwell.toFixed(2),t.pax,t.cars])])})}
 function loadGame(d){newGame(d.g.chap);Object.assign(G,d.g,{paused:true,modal:false,over:false});
