@@ -452,7 +452,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 2.7 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 2.8 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -502,6 +502,7 @@ const LABEL = id => id==='34'?'MB':id;
 const LEVELS = [['M2'],['T1','F1'],['34'],['M4'],['B1'],['M5','M12'],['M7','M6'],['M1A','M1B'],['M3','T4'],['M9','M11'],['T5','F2','TF2'],['M8','T3','F4'],['T6','B2','T2','F3','TF1']];
 const needFor = lv => Math.round(15*Math.pow(lv,1.55)); // seviye lv'den lv+1'e geçmek için gereken toplam puan
 const SKINS = [
+  {id:'gercek',name:'Gerçek tren setleri',desc:'İstanbul\'daki gibi beyaz gövde, hat renginde şerit ve koyu camlar.',price:0},
   {id:'klasik',name:'Klasik',desc:'Her hat kendi aracıyla: metro, tramvay, Marmaray, metrobüs.',price:0},
   {id:'metrobus',name:'Metrobüs görünümü',desc:'Bütün araçlar körüklü metrobüs olur.',price:150},
   {id:'metro',name:'Metro görünümü',desc:'Bütün araçlar burunlu metro dizisi olur.',price:150},
@@ -551,6 +552,8 @@ const dif=()=>DIFF[CFG.diff]||DIFF.normal;
 function vib(p){if(!CFG.vibrate)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 const P = {coins:load('mi-coins',0),owned:load('mi-owned',['klasik','std']),skin:load('mi-skin','klasik'),bus:load('mi-bus','std'),best:load('mi-best',0),chap:load('mi-chap',{})};
 if(!P.owned.includes('std'))P.owned.push('std');
+// Gerçek tren setleri ücretsiz; bir kez varsayılan yapılır
+if(!P.owned.includes('gercek')){P.owned.push('gercek');if(P.skin==='klasik')P.skin='gercek';try{localStorage.setItem('mi-owned',JSON.stringify(P.owned));localStorage.setItem('mi-skin',JSON.stringify(P.skin))}catch(e){}}
 function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-skin',P.skin);save('mi-bus',P.bus);save('mi-best',P.best);save('mi-chap',P.chap)}
 
 // ---------- Durum ----------
@@ -1024,6 +1027,7 @@ function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
   if(bus==='otokar'){body='#E3E7E6';band='#2C8C99';win='#1E2528'}
   if(skin==='nostalji'){body='#B3172C';stripe='#F3E6C8';win='rgba(255,255,255,.95)'}
   if(skin==='gece'){body='#14181B';glow=color;win=color;band=null}
+  const real=skin==='gercek'&&look!=='bus';if(real){body='#EEF1EF';win='#FFFFFF'}
   if(bus==='std'&&look==='bus'&&skin!=='nostalji'&&skin!=='gece'){body='#B9C0C4';band=null;win='#1E2528'}
   const secs=look==='bus'?cars+(bus==='akia'?3:2):cars+1;
   for(let k=0;k<secs;k++){const ox=-k*step;c.save();
@@ -1037,6 +1041,9 @@ function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
     if(!glow){c.strokeStyle='rgba(20,24,27,.85)';c.lineWidth=.9;c.stroke()}
     if(glow){c.strokeStyle=glow;c.lineWidth=1.4;c.stroke()}
     if(stripe){c.fillStyle=stripe;c.fillRect(-w/2+1,-1,w-2,2)}
+    if(real){c.fillStyle=color;c.fillRect(-w/2+1,-h/2+.9,w-2,1.6);c.fillRect(-w/2+1,h/2-2.5,w-2,1.6);
+      c.fillStyle='rgba(30,37,40,.82)';c.fillRect(-w/2+2,-1.3,w-4,2.6);
+      if(k===0&&look!=='gondola'){c.fillStyle='#1d2327';c.fillRect(w/2-2.6,-h/2+1.6,1.6,h-3.2)}}
     if(look==='bus'){
       // Üstten görünüş: açık gri gövde, önde koyu ön cam, tavanda klima kutusu, yanlarda ince şerit
       if(band){c.fillStyle=band;c.fillRect(-w/2+1.2,-h/2+.9,w-2.4,1.3);c.fillRect(-w/2+1.2,h/2-2.2,w-2.4,1.3)}
