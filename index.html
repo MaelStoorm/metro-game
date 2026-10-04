@@ -460,7 +460,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.0 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -571,7 +571,7 @@ function recordScore(){if(G.chap||G.score<=0)return -1;
   P.board.push(e);P.board.sort((a,b)=>b.s-a.s);P.board=P.board.slice(0,10);lastBoard=e.id;return P.board.findIndex(x=>x.id===e.id)}
 let lastBoard=0;
 function renderBoard(){const B=P.board,DF={kolay:'kolay',normal:'normal',zor:'zor'};
-  const stars=Object.values(P.chap).reduce((a,r)=>a+(r.stars||0),0),done=Object.values(P.chap).filter(r=>r.stars>0).length;
+  const cr=CHAPS.map(id=>P.chap[id]||{stars:0}),stars=cr.reduce((a,r)=>a+(r.stars||0),0),done=cr.filter(r=>r.stars>0).length;
   $('#boardBox').innerHTML=`<h3>En iyi oyunların</h3>${B.length?`<ol>${B.map(e=>`<li class="${e.id===lastBoard?'new':''}"><span><b>${e.s}</b> puan · seviye ${e.l} · ${e.w}. hafta</span><span>${esc(e.d)}${e.df!=='normal'?' · '+esc(DF[e.df]||e.df):''}</span></li>`).join('')}</ol>`:'<p class="muted" style="margin:0">Henüz bitmiş oyun yok. Oyna modunda ilk oyununu bitir, skorun burada görünsün.</p>'}
   <div class="stars"><span>Bölüm yıldızları</span><b>${'★'} ${stars}/${CHAPS.length*3} · ${done}/${CHAPS.length} bölüm</b></div>`}
 
@@ -581,16 +581,22 @@ const crossCache=new Map();
 const V={cx:0,cy:0,s:40}; let manual=false, showReal=CFG.real;
 
 // ---------- Bölümler: her hat tek başına ----------
-const CHAPS=['M2','34',...LINE_ORDER.filter(id=>id!=='M2'&&id!=='34')];
-const chapTarget=id=>Math.min(id==='M2'?40:60,Math.max(12,Math.round(LINEDEF[id].seq.length*2.5)));
+// M2 iki bölüm: asıl hat (Yenikapı – Hacıosman) ve Sefaköy uzatması. Teleferikler (TF1, TF2) bölüm değil.
+const CHAPDEF={M2:{line:'M2',from:'Yenikapı',to:'Hacıosman',name:'Yenikapı – Hacıosman'},M2S:{line:'M2',from:'Sefaköy',to:'Yenikapı',name:'Sefaköy – Yenikapı',label:'M2+'}};
+const chapLine=id=>(CHAPDEF[id]||{}).line||id,chapLabel=id=>(CHAPDEF[id]||{}).label||LABEL(id),chapName=id=>(CHAPDEF[id]||{}).name||LINEDEF[chapLine(id)].name;
+function chapSeq(id){const c=CHAPDEF[id],q=LINEDEF[chapLine(id)].seq;if(!c)return q;
+  const a=q.findIndex(i=>NODES[i].name===c.from),b=q.findIndex(i=>NODES[i].name===c.to);return a<0||b<0?q:q.slice(Math.min(a,b),Math.max(a,b)+1)}
+const CHAPS=['M2','M2S','34',...LINE_ORDER.filter(id=>!['M2','34','TF1','TF2'].includes(id))];
+const chapTarget=id=>Math.min(id==='M2'?40:60,Math.max(12,Math.round(chapSeq(id).length*2.5)));
 const chapStars=(id,sc)=>{const t=chapTarget(id);return sc>=t*2.3?3:sc>=t*1.6?2:sc>=t?1:0};
-const chapOpen=k=>k===0||CHAPS[k]==='34'||((P.chap[CHAPS[k-1]]||{}).stars||0)>=1;
+// Bir bölüm, öncekinde hedefe ulaşınca (1 yıldız) açılır; daha önce oynanmış bölümler açık kalır
+const chapOpen=k=>k===0||((P.chap[CHAPS[k]]||{}).stars||0)>0||((P.chap[CHAPS[k-1]]||{}).stars||0)>=1;
 function newGame(chap){
   G={chap:chap||null,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
      st:NODES.map(n=>({...n,queue:[],crowd:0,revealed:false,inPool:false,rt:-99,spawn:0})),
      lines:LINE_ORDER.map(id=>({...LINEDEF[id],st:[],trains:[],unlocked:false})),
      pool:{train:dif().train,car:0,gecit:dif().gecit}};G.speed=+CFG.speed||1;
-  if(chap){G.level=LEVELS.length;unlock([chap]);const q=LINEDEF[chap].seq,n=q.length,m=n>>1;
+  if(chap){G.level=LEVELS.length;const q=chapSeq(chap),n=q.length,m=n>>1;{const L=lineById(chapLine(chap));L.unlocked=true;for(const i of q)G.st[i].inPool=true}
     const c=chap==='34'?Math.max(1,q.findIndex(i=>/15 Temmuz/.test(G.st[i].name))):m,pick=n<=4?q:[q[c-1],q[c],q[Math.min(n-1,c+1)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
   else{unlock(LEVELS[0]);
   for(const nm of ['Taksim','Levent','Vezneciler-İstanbul Üniversitesi']){const s=G.st.find(s=>s.name===nm);if(s)reveal(s)}}
@@ -605,7 +611,7 @@ function nearestToRevealed(cands,k){const rev=G.st.filter(s=>s.revealed);
   return cands.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return [d,c]}).sort((a,b)=>a[0]-b[0]).slice(0,k).map(a=>a[1])}
 function pickReveal(){
   // Bölümde yeni durak, açık bir durağın hattaki komşusu olur: hat gerçek sırasıyla büyür
-  if(G.chap){const q=LINEDEF[G.chap].seq,nb=[];q.forEach((i,k)=>{const s=G.st[i];if(s.revealed||!s.inPool)return;
+  if(G.chap){const q=chapSeq(G.chap),nb=[];q.forEach((i,k)=>{const s=G.st[i];if(s.revealed||!s.inPool)return;
       if((k>0&&G.st[q[k-1]].revealed)||(k<q.length-1&&G.st[q[k+1]].revealed))nb.push(s)});
     if(nb.length){reveal(nb[Math.random()*nb.length|0]);network();return}}
   const rev=G.st.filter(s=>s.revealed), cand=G.st.filter(s=>s.inPool&&!s.revealed);
@@ -663,16 +669,16 @@ function chapProgress(){const id=G.chap,st=chapStars(id,G.score);if(st<=G.chapSt
   const rec=P.chap[id]||{stars:0,best:0},gain=Math.max(0,st-rec.stars)*5;G.chapStar=st;
   P.chap[id]={stars:Math.max(rec.stars,st),best:Math.max(rec.best,G.score)};P.coins+=gain;G.earned+=gain;persist();
   const k=CHAPS.indexOf(id),nx=CHAPS[k+1];
-  $('#chapDoneEyebrow').textContent=`Bölüm ${k+1} · ${LABEL(id)}`;$('#chapDoneTitle').textContent='★'.repeat(st)+'☆'.repeat(3-st);
-  $('#chapDoneText').textContent=(st===1?`Hedefe ulaştın, ${nx?LABEL(nx)+' bölümü açıldı. ':''}`:`${st}. yıldızı aldın. `)+(gain?`${gain} jeton kazandın. `:'')+(st<3?`Sonraki yıldız ${Math.ceil(chapTarget(id)*(st===1?1.6:2.3))} puanda.`:'Bu bölümü tamamladın.');
+  $('#chapDoneEyebrow').textContent=`Bölüm ${k+1} · ${chapLabel(id)}`;$('#chapDoneTitle').textContent='★'.repeat(st)+'☆'.repeat(3-st);
+  $('#chapDoneText').textContent=(st===1?`Hedefe ulaştın, ${nx?chapLabel(nx)+' bölümü açıldı. ':''}`:`${st}. yıldızı aldın. `)+(gain?`${gain} jeton kazandın. `:'')+(st<3?`Sonraki yıldız ${Math.ceil(chapTarget(id)*(st===1?1.6:2.3))} puanda.`:'Bu bölümü tamamladın.');
   $('#btnChapNext').hidden=!nx;G.modal=true;$('#chapDone').hidden=false;vib(60);checkAch()}
 let chapWasPaused=true;
 function openChaps(){chapWasPaused=G.paused;const L=$('#chapList');
-  L.innerHTML=CHAPS.map((id,k)=>{const d=LINEDEF[id],r=P.chap[id]||{stars:0,best:0},open=chapOpen(k);
-    return `<button class="chap" data-chap="${id}" aria-disabled="${!open}" style="--c:${d.color}"><i>${open?'':'🔒︎ '}${LABEL(id)}</i><span>${esc(d.name)}</span><span class="st">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</span><span class="n">Bölüm ${k+1} · hedef ${chapTarget(id)}${r.best?` · en iyi ${r.best}`:''}</span></button>`}).join('');
+  L.innerHTML=CHAPS.map((id,k)=>{const d=LINEDEF[chapLine(id)],r=P.chap[id]||{stars:0,best:0},open=chapOpen(k);
+    return `<button class="chap" data-chap="${id}" aria-disabled="${!open}" style="--c:${d.color}"><i>${open?'':'🔒︎ '}${chapLabel(id)}</i><span>${esc(chapName(id))}</span><span class="st">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</span><span class="n">Bölüm ${k+1} · hedef ${chapTarget(id)}${r.best?` · en iyi ${r.best}`:''}</span></button>`}).join('');
   G.paused=true;$('#chapModal').hidden=false;hud(true)}
 function startChap(id){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro'])$(m).hidden=true;newGame(id);G.paused=false;hud(true);
-  toast(`${LABEL(id)} bölümü: ${chapTarget(id)} yolcu taşı. İstasyondan istasyona sürükleyerek hattı kur.`)}
+  toast(`${chapLabel(id)} bölümü: ${chapTarget(id)} yolcu taşı. İstasyondan istasyona sürükleyerek hattı kur.`)}
 
 // ---------- Başarımlar ve günlük görev (jeton ödüllü, cihazda saklanır) ----------
 const ST=Object.assign({del:0,mr:0,brt:0,cross:0},load('mi-stat',{}));
@@ -848,7 +854,7 @@ function endWith(s){G.over=true;G.overSt=s;focusOn(s);clearSave();setTimeout(()=
 function gameOver(s){
   clearSave();G.over=true;G.overSt=s;const wasBest=G.score>P.best&&!G.chap;P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
   $('#overTitle').textContent=s.name+' taştı';$('#overScore').textContent=G.score;
-  $('#overText').textContent=G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${LABEL(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
+  $('#overText').textContent=G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${chapLabel(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
   $('#btnAdCont').hidden=!!G.adUsed;$('#overModal').hidden=false;
   vib([80,60,160]);
 }
@@ -1542,7 +1548,7 @@ $('#btnChaps').onclick=()=>{$('#intro').hidden=true;openChaps()};$('#btnOverChap
 $('#btnAch').onclick=openAch;$('#btnAchClose').onclick=()=>{$('#achModal').hidden=true;G.paused=achWasPaused;hud(true)};
 $('#btnChapClose').onclick=()=>{$('#chapModal').hidden=true;if(G.over)$('#overModal').hidden=false;else if(!G.modal)G.paused=chapWasPaused;hud(true)};
 $('#chapList').addEventListener('click',e=>{const b=e.target.closest('[data-chap]');if(!b)return;const k=CHAPS.indexOf(b.dataset.chap);
-  if(!chapOpen(k)){toast(`Önce ${LABEL(CHAPS[k-1])} bölümünde 1 yıldız al.`);return}startChap(b.dataset.chap)});
+  if(!chapOpen(k)){toast(`Önce ${chapLabel(CHAPS[k-1])} bölümünü tamamla (1 yıldız).`);return}startChap(b.dataset.chap)});
 $('#btnChapGo').onclick=()=>{$('#chapDone').hidden=true;G.modal=false;G.paused=false;hud(true)};
 $('#btnChapNext').onclick=()=>{const nx=CHAPS[CHAPS.indexOf(G.chap)+1];if(nx)startChap(nx)};
 $('#btnLvlOk').onclick=()=>{$('#levelModal').hidden=true;G.modal=false;hud(true)};
