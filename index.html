@@ -648,7 +648,7 @@ function dailyAdd(k,v){dailyRoll();const T=DTASK[DAILY.k];if(DAILY.done||T.k!==k
     note(`✅ Günlük görev tamam · +${c} jeton`+(DAILY.streak>1?` · ${DAILY.streak} gün üst üste`:''));vib([40,40,80]);checkAch()}
   save('mi-daily',DAILY);renderDaily()}
 function renderDaily(){dailyRoll();const T=DTASK[DAILY.k],pct=Math.min(100,DAILY.prog/T.n*100);
-  const h=`<b>Günlük görev</b> · ${esc(T.t(T.n))}<div class="dbar"><i style="width:${pct}%"></i></div><div class="r"><span>${DAILY.done?'Tamamlandı, yarın yenisi gelir':`${DAILY.prog}/${T.n}`}</span><span>${DAILY.done?'':`+${dailyReward()} jeton`}${DAILY.streak?` · 🔥 ${DAILY.streak} gün`:''}</span></div>`;
+  const h=`<b>Günlük görev</b> · ${esc(T.t(T.n))}<div class="dbar"><i style="width:${pct}%"></i></div><div class="r"><span>${DAILY.done?'Tamamlandı, yarın yenisi gelir':`${DAILY.prog}/${T.n}`}</span><span>${[DAILY.done?'':`+${dailyReward()} jeton`,DAILY.streak?`🔥 ${DAILY.streak} gün`:''].filter(Boolean).join(' · ')}</span></div>`;
   for(const id of ['#dailyBox','#dailyBox2'])$(id).innerHTML=h}
 function onDeliver(L,n,pv,S){ST.del+=n;const brt=L.mode==='brt',mr=L.id==='B1',cr=!!pv&&crossings(pv,S)>0;
   if(mr)ST.mr+=n;if(brt)ST.brt+=n;if(cr)ST.cross+=n;if(hourOf(G.t)<6)G.nightDel=(G.nightDel||0)+n;save('mi-stat',ST);
