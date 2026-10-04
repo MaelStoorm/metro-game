@@ -452,7 +452,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 2.4 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 2.5 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -602,8 +602,17 @@ const segCost=(L,a,b)=>modeOf(L).free?0:crossings(a,b);
 const gecitFree=()=>G.pool.gecit-G.gecitUsed;
 
 // ---------- Ağ ----------
+// Yürüyerek aktarma: ayrı duraklar ama gerçekte yaya bağlantılı resmi aktarma noktaları
+const WALK=[['Bakırköy-İncirli','İncirli-Ömür (Bakırköy)'],['Şişli-Mecidiyeköy','Mecidiyeköy'],['Ünalan','Uzunçayır'],['Özgürlük Meydanı','Bakırköy'],['Şişhane','Tünel']]
+  .map(([a,b])=>[NODES.findIndex(n=>n.name===a),NODES.findIndex(n=>n.name===b)]).filter(([a,b])=>a>=0&&b>=0);
+for(const [a,b] of WALK){NODES[a].walk=b;NODES[b].walk=a}
+function walkTransfers(){for(const [a,b] of WALK){const A=G.st[a],B=G.st[b];if(!A.revealed||!B.revealed)continue;
+  for(const [X,Y] of [[A,B],[B,A]]){if(!X.queue.length)continue;let got=0;
+    X.queue=X.queue.filter(p=>{if(!(dd(p,Y.i)<dd(p,X.i)))return true;if(p===Y.type)got++;else Y.queue.push(p);return false});
+    if(got){addScore(got);Y.pop=G.t}}}}
 function network(){
   segLines=new Map();adj=G.st.map(()=>[]);let used=0;
+  for(const [a,b] of WALK)if(G.st[a].revealed&&G.st[b].revealed){adj[a].push(b);adj[b].push(a)}
   for(const L of G.lines)for(let k=1;k<L.st.length;k++){const a=L.st[k-1],b=L.st[k];const key=segKey(a,b);
     if(!segLines.has(key))segLines.set(key,[]);segLines.get(key).push(L.id);adj[a.i].push(b.i);adj[b.i].push(a.i);used+=segCost(L,a,b)}
   G.gecitUsed=used;dist={};
@@ -755,6 +764,7 @@ function step(dt){
     if(s.queue.length>QMAX)s.crowd+=dt/OVER_T;else s.crowd=Math.max(0,s.crowd-dt/(OVER_T*1.5));
     if(s.crowd>.55&&!s.warned){s.warned=true;warnCrowd(s)}else if(s.crowd<.2)s.warned=false;
     if(s.crowd>=1){overflow(s);return}}
+  walkTransfers();
   for(const L of G.lines){if(L.st.length<2)continue;const md=modeOf(L);
     for(const tr of L.trains){
       if(tr.dwell>0){tr.dwell-=dt;const S=L.st[tr.i];
@@ -949,6 +959,9 @@ function trainPoses(L,tr,count,gap){const B=bzOf(L),{u,d}=trainU(L,tr),n1=B.leng
   return out}
 function drawLines(){
   ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.save();ctx.strokeStyle=C.ink;ctx.globalAlpha=.55;ctx.lineWidth=3;ctx.setLineDash([2,5]);
+  for(const [a,b] of WALK){const A=G.st[a],B=G.st[b];if(!A.revealed||!B.revealed)continue;ctx.beginPath();ctx.moveTo(sx(A.x),sy(A.y));ctx.lineTo(sx(B.x),sy(B.y));ctx.stroke()}
+  ctx.restore();
   for(const L of G.lines){if(L.st.length<2)continue;L._bz=lineBz(L);ctx.strokeStyle=L.color;ctx.lineWidth=G.sel===L.id?8:6;
     if(L.mode==='brt'){ctx.setLineDash([12,5])}
     ctx.beginPath();ctx.moveTo(L._bz[0][0],L._bz[0][1]);for(const b of L._bz){ctx.lineTo(b[0],b[1]);ctx.bezierCurveTo(b[2],b[3],b[4],b[5],b[6],b[7])}ctx.stroke();
@@ -1155,7 +1168,7 @@ function transferText(S,O){const seq=O.seq,a=seq[0],b=seq[seq.length-1],k=SAY(O.
 // İngilizce kısım da aynı Türkçe kadın sesiyle okunur; Türkçe ses doğru telaffuz etsin diye okunuşuna göre yazıldı.
 const EN_NEXT='Nekst steyşın';
 function announceText(L,S){const bus=L.mode==='brt',tram=L.mode.includes('tram');
-  const others=S.lines.filter(l=>l!==L.id&&SAY(l)!==SAY(L.id)&&lineById(l)&&lineById(l).unlocked);
+  const others=[...new Set([...S.lines,...(S.walk!=null?NODES[S.walk].lines:[])])].filter(l=>l!==L.id&&SAY(l)!==SAY(L.id)&&lineById(l)&&lineById(l).unlocked);
   let tr=bus?`Bir sonraki durak, ${SPOKEN(S.name)}.`:tram?`Gelecek durak, ${SPOKEN(S.name)}.`:`Gelecek istasyon, ${SPOKEN(S.name)}.`;
   if(CFG.english)tr+=` ${EN_NEXT}, ${SPOKEN(S.name)}.`;
   for(const id of others.slice(0,2))tr+=' '+transferText(S,LINEDEF[id]);
