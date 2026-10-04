@@ -465,7 +465,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.6 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.7 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -1018,12 +1018,12 @@ function drawMapRaw(){
   for(let k=0;k<DIST.length;k++){const D=DIST[k];if(D.x1<vx0||D.x0>vx1||D.y1<vy0||D.y0>vy1)continue;
     ctx.beginPath();for(const r of D.rings)ringPath(r);ctx.fillStyle=C.land;ctx.fill('evenodd');
     if(selD&&selD.has(k)){ctx.globalAlpha=.13;ctx.fillStyle=sel.color;ctx.fill('evenodd');ctx.globalAlpha=1}}
-  ctx.lineWidth=1;ctx.strokeStyle=C.district;ctx.setLineDash([4,3]);
+  ctx.save();ctx.lineWidth=.8;ctx.strokeStyle=C.district;ctx.globalAlpha=.55;ctx.lineJoin='round';
   if(CFG.districts)for(const D of DIST){if(D.x1<vx0||D.x0>vx1||D.y1<vy0||D.y0>vy1)continue;ctx.beginPath();for(const r of D.rings)ringPath(r);ctx.stroke()}
-  ctx.setLineDash([]);
+  ctx.restore();
   // Göller ve barajlar (Küçükçekmece, Büyükçekmece, Terkos, Ömerli, Sazlıdere, Alibeyköy, Elmalı)
-  for(const [nm,r] of DATA.lakes||[]){ctx.beginPath();ringPath(r);ctx.fillStyle=C.water;ctx.fill();ctx.lineJoin='round';ctx.lineWidth=1.2;ctx.strokeStyle=C.district;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
-    if(nm&&V.s>=9){let cx=0,cy=0;const n=r.length/2;for(let i=0;i<r.length;i+=2){cx+=r[i];cy+=r[i+1]}const X=sx(cx/n),Y=sy(cy/n);
+  for(const [nm,r] of DATA.lakes||[]){ctx.beginPath();ringPath(r);ctx.fillStyle=C.water;ctx.fill();
+    if(nm&&V.s>=18){let cx=0,cy=0;const n=r.length/2;for(let i=0;i<r.length;i+=2){cx+=r[i];cy+=r[i+1]}const X=sx(cx/n),Y=sy(cy/n);
       if(X>-80&&X<W+80&&Y>-20&&Y<H+20){ctx.save();if('letterSpacing' in ctx)ctx.letterSpacing='0px';ctx.font=`italic 600 ${V.s>30?12:10.5}px ${BODY}`;ctx.fillStyle=C['water-ink'];ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(nm,X,Y);ctx.restore()}}}
   try{ctx.letterSpacing='0.22em'}catch(e){}
   ctx.textAlign='center';ctx.textBaseline='middle';
@@ -1336,9 +1336,9 @@ const ptrs=new Map();let drag=null,pinch=null,hoverSt=null,isTouch=false;
 function pos(e){const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
 function stationAt(x,y,rad){let best=null,bd=rad;for(const s of G.st){if(!s.revealed)continue;const d=Math.hypot(sx(s.x)-x,sy(s.y)-y);if(d<bd){bd=d;best=s}}return best}
 function handleAt(x,y,rad){let best=null,bd=rad;for(const h of handles()){const d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;best=h}}return best}
-function segmentAt(x,y,rad){for(const L of G.lines)for(let k=1;k<L.st.length;k++){const p=segPts(L,L.st[k-1],L.st[k]);
-  const dx=p[2]-p[0],dy=p[3]-p[1],l2=dx*dx+dy*dy||1,u=((x-p[0])*dx+(y-p[1])*dy)/l2;if(u<.15||u>.85)continue;
-  if(Math.hypot(p[0]+dx*u-x,p[1]+dy*u-y)<rad)return {L,k}}return null}
+// Hattın kavisli çizgisinin herhangi bir yerinden tutulur (durakların hemen yanı hariç); en yakın hat seçilir
+function segmentAt(x,y,rad){let best=null,bd=rad;for(const L of G.lines){if(L.st.length<2)continue;const B=lineBz(L);
+  for(let k=0;k<B.length;k++)for(let t=.04;t<=.96;t+=.03){const q=bzAt(B,k+t),d=Math.hypot(q.x-x,q.y-y);if(d<bd){bd=d;best={L,k:k+1}}}}return best}
 function freeLine(){if(G.sel){const L=lineById(G.sel);if(L&&L.unlocked&&!L.st.length)return L}return G.lines.find(l=>l.unlocked&&!l.st.length)}
 let lastWarn=0;function warn(msg){const n=performance.now();if(n-lastWarn>1800){toast(msg);lastWarn=n}}
 const noGecit=()=>warn('Geçit kalmadı. Haftalık ödülden geçit seç ya da suyu Marmaray, metrobüs veya teleferikle geç.');
@@ -1359,7 +1359,7 @@ cv.addEventListener('pointerdown',e=>{
   if(vSel){vSel=null;renderVinfo()}
   if(s){const L=freeLine();if(!L){warn('Açık hatların hepsi kullanımda. Seviye atla ya da bir hattı kaldır.');drag=pan;return}
     drag={kind:'new',L,from:s,x:p.x,y:p.y};return}
-  const sg=segmentAt(p.x,p.y,isTouch?16:10);if(sg){drag={kind:'insert',L:sg.L,k:sg.k,target:null,moved:false,x:p.x,y:p.y};G.sel=sg.L.id;return}
+  const sg=segmentAt(p.x,p.y,isTouch?24:12);if(sg){drag={kind:'insert',L:sg.L,k:sg.k,target:null,moved:false,x:p.x,y:p.y};G.sel=sg.L.id;return}
   drag=pan;
 });
 cv.addEventListener('pointermove',e=>{
