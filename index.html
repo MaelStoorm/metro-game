@@ -288,7 +288,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
 
   <div id="splash" role="img" aria-label="Metro İstanbul açılış ekranı">
     <div class="sp-box">
-      <div class="sp-studio"><span class="studio-name">EGEMEN STUDIO</span><small>sunar</small></div>
+      <div class="sp-studio"><span class="studio-name">MAELSTROM STUDIO</span><small>sunar</small></div>
       <svg class="sp-emb" viewBox="0 0 512 512" aria-hidden="true">
   <defs>
     <linearGradient id="spSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E1F2A"/><stop offset=".55" stop-color="#25475A"/><stop offset=".8" stop-color="#E7895A"/></linearGradient>
@@ -358,7 +358,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="secondary" id="btnSettings2">Ayarlar</button>
         </div>
       </div>
-      <p class="credit"><b class="studio-name">EGEMEN STUDIO</b> · © 2026. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Metro İstanbul ağ haritasından.</p>
+      <p class="credit"><b class="studio-name">MAELSTROM STUDIO</b> · © 2026. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Metro İstanbul ağ haritasından.</p>
     </div>
   </div>
 
@@ -465,7 +465,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.5 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.6 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -625,7 +625,7 @@ function newGame(chap,region){
      pool:{train:dif().train,car:0,gecit:dif().gecit}};G.speed=+CFG.speed||1;
   if(chap){G.level=G.levels.length;const q=chapSeq(chap),n=q.length,m=n>>1;chapLines(chap).forEach((ln,k)=>{const L=lineById(ln);L.unlocked=true;for(const i of chapSeqs(chap)[k])G.st[i].inPool=true})
     const c=chap==='34'?Math.max(1,q.findIndex(i=>/15 Temmuz/.test(G.st[i].name))):m,pick=n<=4?q:[q[c-1],q[c],q[Math.min(n-1,c+1)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
-  else if(region){unlock(G.levels[0]);const q=LINEDEF[G.levels[0][0]].seq.filter(i=>sideOf(i)===region),m=q.length>>1;
+  else if(region){unlock(G.levels[0]);const q=sideSeq(G.levels[0][0],region).filter(i=>sideOf(i)===region),m=q.length>>1;
     for(const i of [q[Math.max(0,m-3)],q[m],q[Math.min(q.length-1,m+3)]])reveal(G.st[i])}
   else{unlock(LEVELS[0]);
   for(const nm of ['Taksim','Levent','Vezneciler-İstanbul Üniversitesi']){const s=G.st.find(s=>s.name===nm);if(s)reveal(s)}}
@@ -634,7 +634,9 @@ function newGame(chap,region){
   Object.assign(V,fitTarget()); manual=false;
 }
 const lineById=id=>G.lines.find(l=>l.id===id);
-function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of L.seq)if(!G.region||sideOf(n)===G.region)G.st[n].inPool=true}}
+// Avrupa yakasında M2 yalnızca asıl hat (Yenikapı – Hacıosman); Sefaköy uzatması yok
+const sideSeq=(id,side)=>side==='europe'&&id==='M2'?chapSeq('M2'):LINEDEF[id].seq;
+function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of (G.region?sideSeq(id,G.region):L.seq))if(!G.region||sideOf(n)===G.region)G.st[n].inPool=true}}
 function reveal(s){s.revealed=true;s.inPool=true;s.rt=G.t;s.spawn=3+Math.random()*4}
 function nearestToRevealed(cands,k){const rev=G.st.filter(s=>s.revealed);
   return cands.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return [d,c]}).sort((a,b)=>a[0]-b[0]).slice(0,k).map(a=>a[1])}
