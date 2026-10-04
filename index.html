@@ -247,6 +247,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
         <span class="vb" id="vbTrain" data-kind="train" title="Dokun ya da bir hatta sürükle: araç ekler">Araç<b id="invTrain">0</b></span>
         <span class="vb" id="vbCar" data-kind="car" title="Dokun ya da bir hatta sürükle: vagon takar">Vagon<b id="invCar">0</b></span>
         <span title="Boğaz ya da Haliç'i metroyla geçmek için tünel/köprü">Geçit<b id="invGecit">0</b></span>
+        <span title="Seçili hattı (seçili hat yoksa bütün hatları) kullanan yolcu sayısı" id="vbPax"><i id="paxLbl" style="font-style:normal">Yolcu</i><b id="invPax">0</b></span>
       </div>
     </div>
   </footer>
@@ -347,6 +348,10 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="primary" id="btnChaps">Bölümler</button>
         </div>
         <button class="secondary" id="btnNew" hidden>Yeni oyun başlat</button>
+        <div class="row2">
+          <button class="secondary" id="side_asia">Anadolu Yakası</button>
+          <button class="secondary" id="side_europe">Avrupa Yakası</button>
+        </div>
         <button class="secondary" id="btnAch">🏆 Skorlar ve başarımlar · <span id="achCount">0</span></button>
         <div class="row2">
           <button class="secondary" id="btnShop2">Mağaza · <span class="coin">₺</span><span id="coinIntro">0</span></button>
@@ -460,7 +465,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.4 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.5 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -508,6 +513,9 @@ const COLORS = {M12:'#A8C21A',M1A:'#E32119',M1B:'#E32119',M2:'#00A04A',M3:'#00A6
   F1:'#8C7B5A',F2:'#7D6C4C',F3:'#9A8866',F4:'#A08F6C',TF1:'#3FB5A3',TF2:'#5CC4B4','34':'#C2A52E'};
 const LABEL = id => id==='34'?'MB':id;
 const LEVELS = [['M2'],['T1','F1'],['34'],['M4'],['B1'],['M5','M12'],['M7','M6'],['M1A','M1B'],['M3','T4'],['M9','M11'],['T5','F2','TF2'],['M8','T3','F4'],['T6','B2','T2','F3','TF1']];
+// Yaka modu: yalnızca Anadolu ya da Avrupa yakasındaki hatlar ve duraklar, puanla sırayla açılır
+const ASIA=new Set(['Adalar','Şile','Tuzla','Pendik','Sultanbeyli','Kartal','Sancaktepe','Çekmeköy','Maltepe','Kadıköy','Ataşehir','Üsküdar','Ümraniye','Beykoz']);
+const SIDES={asia:{name:'Anadolu Yakası',first:'M4'},europe:{name:'Avrupa Yakası',first:'M2'}};
 const needFor = lv => Math.round(15*Math.pow(lv,1.55)); // seviye lv'den lv+1'e geçmek için gereken toplam puan
 const SKINS = [
   {id:'gercek',name:'Gerçek tren setleri',desc:'İstanbul\'daki gibi beyaz gövde, hat renginde şerit ve koyu camlar.',price:0},
@@ -529,10 +537,10 @@ const DIFF={kolay:{over:55,spawn:1.45,train:4,gecit:4},normal:{over:40,spawn:1.1
 // Gün 06:00'da başlar. Sabah 07-09:30 ve akşam 17-19:30 yoğun saat (yolcu x1,7), gece 00-06 sakin (x0,45).
 const H0=10,hourOf=t=>((t%DAY)/DAY*24+H0)%24,dayOf=t=>Math.floor((t/DAY*24+H0)/24);
 const rushOf=h=>(h>=7&&h<9.5)||(h>=17&&h<19.5)?1.35:h<6?.5:1;
-// Mevsimler: her hafta bir mevsim (1. hafta ilkbahar). Kışın günler kısa ve kar yağabilir, yazın günler uzun.
+// Mevsimler: her mevsim 3 hafta (1.–3. hafta ilkbahar). Kışın günler kısa ve kar yağabilir, yazın günler uzun.
 const SEASONS=[{n:'İlkbahar',ic:'🌸',sun:[7,19],tint:'rgba(110,190,110,.05)'},{n:'Yaz',ic:'☀️',sun:[6,20.5],tint:'rgba(255,196,80,.05)'},
   {n:'Sonbahar',ic:'🍂',sun:[7,18.5],tint:'rgba(214,120,40,.07)'},{n:'Kış',ic:'❄️',sun:[8,17],tint:'rgba(225,236,255,.09)'}];
-const seasonIdx=()=>G?(G.week-1)%4:0,season=()=>SEASONS[seasonIdx()];
+const seasonIdx=()=>G?Math.floor((G.week-1)/3)%4:0,season=()=>SEASONS[seasonIdx()];
 const nightA=h=>{const [a,b]=season().sun;return h<a-2?.22:h<a?.22*(a-h)/2:h<b?0:h<b+2?.22*(h-b)/2:.22};
 const DAYS=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
 const DISP="'Barlow Condensed','Arial Narrow',sans-serif", BODY="'Barlow',system-ui,sans-serif";
@@ -562,13 +570,13 @@ const CFG = Object.assign({voice:'',english:true,vol:70,vehicle:true,announce:tr
 const saveCfg=()=>save('mi-cfg',CFG);
 const dif=()=>DIFF[CFG.diff]||DIFF.normal;
 function vib(p){if(!CFG.vibrate)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
-const P = {coins:load('mi-coins',0),owned:load('mi-owned',['klasik','std']),skin:load('mi-skin','klasik'),bus:load('mi-bus','std'),best:load('mi-best',0),chap:load('mi-chap',{}),board:load('mi-board',[])};
+const P = {coins:load('mi-coins',0),owned:load('mi-owned',['klasik','std']),skin:load('mi-skin','klasik'),bus:load('mi-bus','std'),best:load('mi-best',0),chap:load('mi-chap',{}),board:load('mi-board',[]),side:load('mi-side',{})};
 if(!P.owned.includes('std'))P.owned.push('std');
 // Gerçek tren setleri ücretsiz; bir kez varsayılan yapılır
 if(!P.owned.includes('gercek')){P.owned.push('gercek');if(P.skin==='klasik')P.skin='gercek';try{localStorage.setItem('mi-owned',JSON.stringify(P.owned));localStorage.setItem('mi-skin',JSON.stringify(P.skin))}catch(e){}}
-function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-skin',P.skin);save('mi-bus',P.bus);save('mi-best',P.best);save('mi-chap',P.chap);save('mi-board',P.board)}
+function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-skin',P.skin);save('mi-bus',P.bus);save('mi-best',P.best);save('mi-chap',P.chap);save('mi-board',P.board);save('mi-side',P.side)}
 // ---------- Skor tablosu: Oyna modundaki en iyi 10 oyun ----------
-function recordScore(){if(G.chap||G.score<=0)return -1;
+function recordScore(){if(G.chap||G.region||G.score<=0)return -1;
   // Reklamla devam edilen oyun aynı satırı günceller
   P.board=P.board.filter(x=>x.id!==G.recId);G.recId=G.recId||Date.now();
   const d=new Date(),e={s:G.score,l:G.level,w:G.week,df:CFG.diff,d:d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),id:G.recId};
@@ -586,27 +594,39 @@ const V={cx:0,cy:0,s:40}; let manual=false, showReal=CFG.real;
 
 // ---------- Bölümler: her hat tek başına ----------
 // M2 iki bölüm: asıl hat (Yenikapı – Hacıosman) ve Sefaköy uzatması. Teleferikler (TF1, TF2) bölüm değil.
-// Füniküler hatlar bağlandıkları hattın bölümünde oynanır: F1 ve F2 T1'de, F4 M6'da. F3 ve teleferikler bölüm değil.
-const CHAPDEF={M2:{line:'M2',from:'Yenikapı',to:'Hacıosman',name:'Yenikapı – Hacıosman'},M2S:{line:'M2',from:'Sefaköy',to:'Yenikapı',name:'Sefaköy – Yenikapı',label:'M2+'},
+// Füniküler hatlar bağlandıkları hattın bölümünde oynanır: F1 ve F2 T1'de, F4 M6'da, T2 M2'de. F3 ve teleferikler bölüm değil.
+const CHAPDEF={M2:{line:'M2',from:'Yenikapı',to:'Hacıosman',extra:['T2'],name:'Yenikapı – Hacıosman · T2 nostaljik tramvay'},M2S:{line:'M2',from:'Sefaköy',to:'Yenikapı',name:'Sefaköy – Yenikapı',label:'M2+'},
   T1:{line:'T1',extra:['F1','F2'],name:'Kabataş – Bağcılar · F1 ve F2 füniküler'},M6:{line:'M6',extra:['F4'],name:'Levent – Hisarüstü · F4 füniküler'}};
-const NOCHAP=['M2','34','TF1','TF2','F1','F2','F3','F4'];
+const NOCHAP=['M2','34','TF1','TF2','F1','F2','F3','F4','T2'];
 // Bölümün hatları ve her hattın bölümdeki durak sırası
 const chapSeqs=id=>[chapSeq(id),...((CHAPDEF[id]||{}).extra||[]).map(x=>LINEDEF[x].seq)],chapLines=id=>[chapLine(id),...((CHAPDEF[id]||{}).extra||[])];
 const chapLine=id=>(CHAPDEF[id]||{}).line||id,chapLabel=id=>(CHAPDEF[id]||{}).label||LABEL(id),chapName=id=>(CHAPDEF[id]||{}).name||LINEDEF[chapLine(id)].name;
 function chapSeq(id){const c=CHAPDEF[id],q=LINEDEF[chapLine(id)].seq;if(!c)return q;
   const a=q.findIndex(i=>NODES[i].name===c.from),b=q.findIndex(i=>NODES[i].name===c.to);return a<0||b<0?q:q.slice(Math.min(a,b),Math.max(a,b)+1)}
 const CHAPS=['M2','34',...LINE_ORDER.filter(id=>!NOCHAP.includes(id)),'M2S'];
-const chapTarget=id=>Math.min(id==='M2'?45:70,Math.max(14,Math.round(new Set(chapSeqs(id).flat()).size*2.9)));
-const chapStars=(id,sc)=>{const t=chapTarget(id);return sc>=t*2.3?3:sc>=t*1.6?2:sc>=t?1:0};
+const chapTarget=id=>Math.min(id==='M2'?45:70,Math.max(18,Math.round(new Set(chapSeqs(id).flat()).size*2.9)));
+// Yıldız eşikleri: hedef, ×1.5 ve ×2 (otomatik oyuncu simülasyonuyla ayarlandı)
+const STAR=[1,1.5,2],starNeed=(id,k)=>Math.ceil(chapTarget(id)*STAR[k]);
+const chapStars=(id,sc)=>sc>=starNeed(id,2)?3:sc>=starNeed(id,1)?2:sc>=starNeed(id,0)?1:0;
 // Bir bölüm, öncekinde hedefe ulaşınca (1 yıldız) açılır; daha önce oynanmış bölümler açık kalır
 const chapOpen=k=>k===0||((P.chap[CHAPS[k]]||{}).stars||0)>0||((P.chap[CHAPS[k-1]]||{}).stars||0)>=1;
-function newGame(chap){
-  G={chap:chap||null,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
+const sideOf=i=>ASIA.has((DATA.districts[NODES[i].d]||[''])[0])?'asia':'europe';
+function sideLevels(side){const ok=id=>LINEDEF[id].seq.filter(i=>sideOf(i)===side).length>=2;
+  let lv=LEVELS.map(l=>l.filter(ok)).filter(l=>l.length);const k=lv.findIndex(l=>l.includes(SIDES[side].first));if(k>0)lv.unshift(...lv.splice(k,1));
+  // yalnızca füniküler/teleferik gibi kısa hatlardan oluşan grup bir öncekine katılır
+  const out=[];for(const l of lv){if(out.length&&l.every(id=>LINEDEF[id].seq.length<=3))out[out.length-1].push(...l);else out.push([...l])}
+  // çok grup varsa ikişer birleşir, böylece yaka bir oyunda tamamlanabilir (simülasyonla: Avrupa 11 → 6 grup)
+  while(out.length>6){const m=[out[0]];for(let i=1;i<out.length;i+=2)m.push([...out[i],...(out[i+1]||[])]);out.splice(0,out.length,...m)}
+  return out}
+function newGame(chap,region){
+  G={chap:chap||null,region:region||null,levels:region?sideLevels(region):LEVELS,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
      st:NODES.map(n=>({...n,queue:[],crowd:0,revealed:false,inPool:false,rt:-99,spawn:0})),
      lines:LINE_ORDER.map(id=>({...LINEDEF[id],st:[],trains:[],unlocked:false,rides:0})),
      pool:{train:dif().train,car:0,gecit:dif().gecit}};G.speed=+CFG.speed||1;
-  if(chap){G.level=LEVELS.length;const q=chapSeq(chap),n=q.length,m=n>>1;chapLines(chap).forEach((ln,k)=>{const L=lineById(ln);L.unlocked=true;for(const i of chapSeqs(chap)[k])G.st[i].inPool=true})
+  if(chap){G.level=G.levels.length;const q=chapSeq(chap),n=q.length,m=n>>1;chapLines(chap).forEach((ln,k)=>{const L=lineById(ln);L.unlocked=true;for(const i of chapSeqs(chap)[k])G.st[i].inPool=true})
     const c=chap==='34'?Math.max(1,q.findIndex(i=>/15 Temmuz/.test(G.st[i].name))):m,pick=n<=4?q:[q[c-1],q[c],q[Math.min(n-1,c+1)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
+  else if(region){unlock(G.levels[0]);const q=LINEDEF[G.levels[0][0]].seq.filter(i=>sideOf(i)===region),m=q.length>>1;
+    for(const i of [q[Math.max(0,m-3)],q[m],q[Math.min(q.length-1,m+3)]])reveal(G.st[i])}
   else{unlock(LEVELS[0]);
   for(const nm of ['Taksim','Levent','Vezneciler-İstanbul Üniversitesi']){const s=G.st.find(s=>s.name===nm);if(s)reveal(s)}}
   for(const s of G.st) if(s.revealed){s.rt=-99;s.spawn=1.5+Math.random()*3}
@@ -614,7 +634,7 @@ function newGame(chap){
   Object.assign(V,fitTarget()); manual=false;
 }
 const lineById=id=>G.lines.find(l=>l.id===id);
-function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of L.seq)G.st[n].inPool=true}}
+function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of L.seq)if(!G.region||sideOf(n)===G.region)G.st[n].inPool=true}}
 function reveal(s){s.revealed=true;s.inPool=true;s.rt=G.t;s.spawn=3+Math.random()*4}
 function nearestToRevealed(cands,k){const rev=G.st.filter(s=>s.revealed);
   return cands.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return [d,c]}).sort((a,b)=>a[0]-b[0]).slice(0,k).map(a=>a[1])}
@@ -673,19 +693,22 @@ function lineDistricts(L){
 // ---------- Araçlar ----------
 function addScore(n){G.score+=n;G.coinFrac+=n;while(G.coinFrac>=5){G.coinFrac-=5;G.earned++;P.coins++}
   if(G.chap)chapProgress();
-  else if(G.level<LEVELS.length&&G.score>=needFor(G.level))levelUp()}
+  else if(G.level<G.levels.length&&G.score>=needFor(G.level))levelUp()}
 function chapProgress(){const id=G.chap,st=chapStars(id,G.score);if(st<=G.chapStar)return;
   const rec=P.chap[id]||{stars:0,best:0},gain=Math.max(0,st-rec.stars)*5;G.chapStar=st;
   P.chap[id]={stars:Math.max(rec.stars,st),best:Math.max(rec.best,G.score)};P.coins+=gain;G.earned+=gain;persist();
   const k=CHAPS.indexOf(id),nx=CHAPS[k+1];
   $('#chapDoneEyebrow').textContent=`Bölüm ${k+1} · ${chapLabel(id)}`;$('#chapDoneTitle').textContent='★'.repeat(st)+'☆'.repeat(3-st);
-  $('#chapDoneText').textContent=(st===1?`Hedefe ulaştın, ${nx?chapLabel(nx)+' bölümü açıldı. ':''}`:`${st}. yıldızı aldın. `)+(gain?`${gain} jeton kazandın. `:'')+(st<3?`Sonraki yıldız ${Math.ceil(chapTarget(id)*(st===1?1.6:2.3))} puanda.`:'Bu bölümü tamamladın.');
+  $('#chapDoneText').textContent=(st===1?`Hedefe ulaştın, ${nx?chapLabel(nx)+' bölümü açıldı. ':''}`:`${st}. yıldızı aldın. `)+(gain?`${gain} jeton kazandın. `:'')+(st<3?`Sonraki yıldız ${starNeed(id,st)} puanda.`:'Bu bölümü tamamladın.');
   $('#btnChapNext').hidden=!nx;G.modal=true;$('#chapDone').hidden=false;vib(60);checkAch()}
 let chapWasPaused=true;
 function openChaps(){chapWasPaused=G.paused;const L=$('#chapList');
   L.innerHTML=CHAPS.map((id,k)=>{const d=LINEDEF[chapLine(id)],r=P.chap[id]||{stars:0,best:0},open=chapOpen(k);
     return `<button class="chap" data-chap="${id}" aria-disabled="${!open}" style="--c:${d.color}"><i>${open?'':'🔒︎ '}${chapLabel(id)}</i><span>${esc(chapName(id))}</span><span class="st">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</span><span class="n">Bölüm ${k+1} · hedef ${chapTarget(id)}${r.best?` · en iyi ${r.best}`:''}</span></button>`}).join('');
   G.paused=true;$('#chapModal').hidden=false;hud(true)}
+function startSide(side){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro','#pauseMenu'])$(m).hidden=true;clearSave();newGame(null,side);G.paused=false;hud(true);
+  toast(`${SIDES[side].name}: yalnızca bu yakanın hatları. Puan topladıkça ${G.levels.length-1} hat grubu daha açılacak.`)}
+function renderSides(){for(const k of Object.keys(SIDES)){const r=(P.side||{})[k]||{};$('#side_'+k).innerHTML=`${k==='asia'?'🌅':'🌉'} ${SIDES[k].name}${r.done?' ✓':''}${r.best?` · en iyi ${r.best}`:''}`}}
 function startChap(id){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro'])$(m).hidden=true;newGame(id);G.paused=false;hud(true);
   toast(`${chapLabel(id)} bölümü: ${chapTarget(id)} yolcu taşı. İstasyondan istasyona sürükleyerek hattı kur.`)}
 
@@ -800,7 +823,7 @@ function step(dt){
   G.t+=dt;evTick();
   G.nextReveal-=dt;
   if(G.nextReveal<=0){pickReveal();const n=G.st.filter(s=>s.revealed).length;G.nextReveal=Math.min(13,6.5+n*0.08)}
-  const mean=Math.max(7,16-G.t/50)*dif().spawn*(G.chap?1.0:1)/rushOf(hourOf(G.t)),OVER_T=dif().over;
+  const mean=Math.max(G.chap?5:7,16-G.t/(G.chap?30:50))*dif().spawn/rushOf(hourOf(G.t)),OVER_T=dif().over;
   for(const s of G.st){if(!s.revealed)continue;
     s.spawn-=dt;if(s.spawn<=0){const ty=weightedType(s.type);if(ty!=null)s.queue.push(ty);s.spawn=(-Math.log(1-Math.random()*.95)*mean+1)/evMul(s)}
     if(s.queue.length>QMAX)s.crowd+=dt/OVER_T;else s.crowd=Math.max(0,s.crowd-dt/(OVER_T*1.5));
@@ -820,12 +843,13 @@ function step(dt){
   if(G.t>=G.week*WEEK){G.week++;G.pool.train++;openWeek();dailyAdd('week',G.week);checkAch()}
 }
 function levelUp(){
-  const ids=LEVELS[G.level];G.level++;unlock(ids);
+  const ids=G.levels[G.level];G.level++;unlock(ids);
   const cands=G.st.filter(s=>s.inPool&&!s.revealed&&s.lines.some(l=>ids.includes(l)));
   for(const s of nearestToRevealed(cands,2))reveal(s);
   network();G.pool.train++;P.coins+=10;G.earned+=10;persist();
   $('#lvlEyebrow').textContent=`Seviye ${G.level}`;
-  $('#lvlTitle').textContent=ids.length>1?'Yeni hatlar açıldı':'Yeni hat açıldı';
+  $('#lvlTitle').textContent=G.region&&G.level===G.levels.length?`${SIDES[G.region].name}nın bütün hatları açıldı!`:ids.length>1?'Yeni hatlar açıldı':'Yeni hat açıldı';
+  if(G.region&&G.level===G.levels.length){P.side=P.side||{};P.side[G.region]=Object.assign(P.side[G.region]||{},{done:true});persist();note(`🏁 ${SIDES[G.region].name} tamamlandı`)}
   $('#lvlUnlock').innerHTML=ids.map(id=>{const L=LINEDEF[id];return `<span class="tag"><i style="--c:${L.color}">${LABEL(id)}</i>${esc(L.name)} · ${MODES[L.mode].label}</span>`}).join('');
   G.modal=true;$('#levelModal').hidden=false;vib(60);
 }
@@ -862,7 +886,7 @@ function overflow(s){
 function focusOn(s){V.cx=s.x;V.cy=s.y;V.s=Math.max(V.s,40);setManual(true)}
 function endWith(s){G.over=true;G.overSt=s;focusOn(s);clearSave();setTimeout(()=>gameOver(s),1300)}
 function gameOver(s){
-  clearSave();G.over=true;G.overSt=s;const wasBest=G.score>P.best&&!G.chap;P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
+  clearSave();G.over=true;G.overSt=s;if(G.region){P.side=P.side||{};const r=P.side[G.region]||{};r.best=Math.max(r.best||0,G.score);P.side[G.region]=r}const wasBest=G.score>P.best&&!G.chap&&!G.region;P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
   $('#overTitle').textContent=s.name+' taştı';$('#overScore').textContent=G.score;
   $('#overText').textContent=G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${chapLabel(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
   $('#btnAdCont').hidden=!!G.adUsed;$('#overModal').hidden=false;
@@ -871,17 +895,17 @@ function gameOver(s){
 // ---------- Kayıt: oyun her birkaç saniyede ve uygulamadan çıkarken kaydedilir; açılışta "Devam et" ile sürer ----------
 function clearSave(){try{localStorage.removeItem('mi-save')}catch(e){}}
 function saveGame(){if(!G||G.over||G.t<3)return;
-  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId','lastKar'])g[k]=G[k];
+  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId','lastKar','region'])g[k]=G[k];
   save('mi-save',{v:1,g,st:G.st.filter(s=>s.inPool||s.revealed).map(s=>[s.i,s.revealed?1:0,s.queue,+s.crowd.toFixed(3),+s.spawn.toFixed(2)]),
     lines:G.lines.map(L=>[L.id,L.unlocked?1:0,L.st.map(s=>s.i),L.trains.map(t=>[t.i,t.dir,+t.t.toFixed(3),+t.dwell.toFixed(2),t.pax,t.cars]),L.rides||0])})}
-function loadGame(d){newGame(d.g.chap);Object.assign(G,d.g,{paused:true,modal:false,over:false});
+function loadGame(d){newGame(d.g.chap,d.g.region);Object.assign(G,d.g,{paused:true,modal:false,over:false});
   for(const s of G.st){s.revealed=false;s.inPool=false;s.queue=[];s.crowd=0}
   for(const [i,rev,q,c,sp] of d.st){const s=G.st[i];s.inPool=true;s.revealed=!!rev;s.queue=q;s.crowd=c;s.spawn=sp;s.rt=-99}
   for(const [id,un,st,trs,rides] of d.lines){const L=lineById(id);if(!L)continue;L.rides=rides||0;L.unlocked=!!un;L.st=st.map(i=>G.st[i]);L.districts=undefined;
     L.trains=trs.map(([i,dir,t,dw,pax,cars])=>({line:L,i:Math.min(i,Math.max(0,L.st.length-1)),dir,t,dwell:dw,pax,cars,doors:false}))}
   network();Object.assign(V,fitTarget());manual=false}
 const SAVED=load('mi-save',null);
-function openWeek(){G.modal=true;$('#weekEyebrow').textContent=`${G.week}. hafta başladı · ${season().ic} ${season().n}`;if(seasonIdx()===3)note('❄️ Kış geldi: günler kısa, kar yağabilir.');else if(seasonIdx()===1)note('☀️ Yaz geldi: günler uzun.');$('#weekModal').hidden=false}
+function openWeek(){G.modal=true;$('#weekEyebrow').textContent=`${G.week}. hafta başladı · ${season().ic} ${season().n}`;if((G.week-1)%3===0)note(seasonIdx()===3?'❄️ Kış geldi: günler kısa, kar yağabilir.':seasonIdx()===1?'☀️ Yaz geldi: günler uzun.':`${season().ic} ${season().n} geldi.`);$('#weekModal').hidden=false}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ---------- Görünüm ----------
@@ -1396,7 +1420,7 @@ TYPES.forEach((t,k)=>{const li=document.createElement('li');li.dataset.type=k;
   li.innerHTML=`<svg viewBox="0 0 16 16" aria-hidden="true"><g fill="var(--paper)" stroke="var(--ink)" stroke-width="1.6" stroke-linejoin="round">${sh}</g></svg>${t.label}`;legendList.appendChild(li)});
 let confirmDel=0,lastHud='',lastBar='';
 function renderBar(){
-  const un=G.lines.filter(l=>l.unlocked),next=G.level<LEVELS.length?LEVELS[G.level]:null;
+  const un=G.lines.filter(l=>l.unlocked),next=G.level<G.levels.length?G.levels[G.level]:null;
   const sig=un.map(l=>l.id+(l.st.length>1?1:0)+l.trains.length+(G.sel===l.id?'s':'')).join()+'|'+G.level;if(sig===lastBar)return;lastBar=sig;
   lineBar.innerHTML=un.map(l=>`<button class="lbtn${l.st.length>1?' on':''}${G.sel===l.id?' sel':''}" data-line="${l.id}" style="--c:${l.color}" aria-pressed="${G.sel===l.id}" title="${esc(l.name)}">${LABEL(l.id)}${l.trains.length?`<span class="badge">${l.trains.length}</span>`:''}</button>`).join('')
     +(next?`<button class="lbtn locked" title="Seviye ${G.level+1} ile açılır" tabindex="-1">🔒︎<br>Sv ${G.level+1}</button>`:'');
@@ -1408,14 +1432,14 @@ function hud(force){
   if(sig===lastHud&&!force)return;lastHud=sig;
   $('#score').textContent=G.score;{const h=hourOf(G.t),hh=String(Math.floor(h)).padStart(2,'0'),mm=Math.floor(h%1*2)?'30':'00',r=rushOf(h);
     $('#clock').textContent=`${season().ic} ${season().n} · ${G.week}. hafta · ${DAYS[dayOf(G.t)%7]} ${hh}:${mm}${r>1?' · Yoğun saat':r<1?' · Gece':''}${G.ev?` · ${evDef().ic} ${evDef().name}`:''}`}
-  const lo=G.level>1?needFor(G.level-1):0,hi=G.level<LEVELS.length?needFor(G.level):null;
-  if(G.chap){const t=chapTarget(G.chap),st=G.chapStar,nt=st===0?t:st===1?Math.ceil(t*1.6):Math.ceil(t*2.3);
+  const lo=G.level>1?needFor(G.level-1):0,hi=G.level<G.levels.length?needFor(G.level):null;
+  if(G.chap){const t=chapTarget(G.chap),st=G.chapStar,nt=starNeed(G.chap,Math.min(2,st));
     $('#lvlName').textContent=`Bölüm ${CHAPS.indexOf(G.chap)+1}`;$('#lvlNext').textContent=`${G.score}/${nt} · ${'★'.repeat(st)}${'☆'.repeat(3-st)}`;
     $('#lvlBar').style.width=Math.min(100,G.score/nt*100)+'%'}
   else{$('#lvlName').textContent=`Seviye ${G.level}`;
-  $('#lvlNext').textContent=hi?`${G.score}/${hi} · Sonraki: ${LEVELS[G.level].map(LABEL).join(', ')}`:'Bütün hatlar açık';
+  $('#lvlNext').textContent=hi?`${G.score}/${hi} · Sonraki: ${G.levels[G.level].map(LABEL).join(', ')}`:G.region?`${SIDES[G.region].name} tamam`:'Bütün hatlar açık';
   $('#lvlBar').style.width=(hi?Math.min(100,(G.score-lo)/(hi-lo)*100):100)+'%'}
-  $('#invTrain').textContent=G.pool.train;$('#invCar').textContent=G.pool.car;$('#invGecit').textContent=gecitFree();
+  $('#invTrain').textContent=G.pool.train;$('#invCar').textContent=G.pool.car;$('#invGecit').textContent=gecitFree();{const L=G.sel&&lineById(G.sel),n=L?L.rides||0:G.lines.reduce((a,l)=>a+(l.rides||0),0);$('#paxLbl').textContent=L?LABEL(L.id)+' yolcu':'Yolcu';$('#invPax').textContent=n>=10000?(n/1000).toFixed(n>=100000?0:1).replace('.',',')+'B':n.toLocaleString('tr-TR')}
   for(const id of ['#coinTop','#coinIntro','#coinShop'])$(id).textContent=P.coins;
   renderBar();
   const pres=presentTypes();for(const li of legendList.children)li.classList.toggle('off',!pres.has(+li.dataset.type));
@@ -1472,7 +1496,7 @@ $('#btnResume').onclick=()=>{G.paused=false;hud(true)};
 $('#pmChaps').onclick=()=>openChaps();
 $('#pmAch').onclick=()=>openAch();
 $('#pmShop').onclick=()=>openShop();
-$('#pmMenu').onclick=()=>{saveGame();$('#btnStart').textContent=`Devam et · ${G.score} puan`;$('#btnNew').hidden=false;renderDaily();renderAchCount();$('#intro').hidden=false;hud(true)};
+$('#pmMenu').onclick=()=>{saveGame();$('#btnStart').textContent=`Devam et · ${G.score} puan`;$('#btnNew').hidden=false;renderDaily();renderAchCount();renderSides();$('#intro').hidden=false;hud(true)};
 // Ödüllü reklamla devam: oyun başına bir kez. Android sürümünde AdMob köprüsü (AndroidTTS.showRewarded) varsa onu kullanır,
 // yoksa 5 saniyelik deneme ekranı gösterir. Reklam tamamlanınca taşan durak boşalır ve oyun kaldığı yerden sürer.
 function showRewarded(done){
@@ -1554,11 +1578,12 @@ $('#btnHelp').onclick=()=>{G.paused=true;$('#intro').hidden=false;$('#btnStart')
 $('#btnStart').onclick=()=>{if(resumeOffer){resumeOffer=false;try{loadGame(SAVED)}catch(e){clearSave();newGame()}}
   resumeOffer=false;$('#btnNew').hidden=true;$('#intro').hidden=true;if(!G.over)G.paused=false;hud(true)};
 $('#btnNew').onclick=()=>{resumeOffer=false;clearSave();newGame();$('#btnNew').hidden=true;$('#intro').hidden=true;G.paused=false;hud(true)};
+$('#side_asia').onclick=()=>startSide('asia');$('#side_europe').onclick=()=>startSide('europe');renderSides();
 let resumeOffer=!!(SAVED&&SAVED.v===1);
 if(resumeOffer){$('#btnStart').textContent=`Devam et · ${SAVED.g.score} puan`;$('#btnNew').hidden=false}
 setInterval(()=>{if(G&&!G.paused)saveGame()},5000);
 addEventListener('pagehide',saveGame);
-$('#btnRestart').onclick=()=>{if(G.chap){startChap(G.chap);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
+$('#btnRestart').onclick=()=>{if(G.chap){startChap(G.chap);return}if(G.region){startSide(G.region);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
 $('#btnChaps').onclick=()=>{$('#intro').hidden=true;openChaps()};$('#btnOverChaps').onclick=()=>{$('#overModal').hidden=true;openChaps()};
 $('#btnAch').onclick=openAch;$('#btnAchClose').onclick=()=>{$('#achModal').hidden=true;G.paused=achWasPaused;hud(true)};
 $('#btnChapClose').onclick=()=>{$('#chapModal').hidden=true;if(G.over)$('#overModal').hidden=false;else if(!G.modal)G.paused=chapWasPaused;hud(true)};
