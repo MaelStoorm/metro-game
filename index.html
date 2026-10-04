@@ -460,7 +460,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 2.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.0 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -586,12 +586,12 @@ const chapTarget=id=>Math.min(id==='M2'?40:60,Math.max(12,Math.round(LINEDEF[id]
 const chapStars=(id,sc)=>{const t=chapTarget(id);return sc>=t*2.3?3:sc>=t*1.6?2:sc>=t?1:0};
 const chapOpen=k=>k===0||CHAPS[k]==='34'||((P.chap[CHAPS[k-1]]||{}).stars||0)>=1;
 function newGame(chap){
-  G={chap:chap||null,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,gecitUsed:0,earned:0,coinFrac:0,
+  G={chap:chap||null,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
      st:NODES.map(n=>({...n,queue:[],crowd:0,revealed:false,inPool:false,rt:-99,spawn:0})),
      lines:LINE_ORDER.map(id=>({...LINEDEF[id],st:[],trains:[],unlocked:false})),
      pool:{train:dif().train,car:0,gecit:dif().gecit}};G.speed=+CFG.speed||1;
   if(chap){G.level=LEVELS.length;unlock([chap]);const q=LINEDEF[chap].seq,n=q.length,m=n>>1;
-    const pick=n<=4?q:[q[Math.max(0,m-3)],q[m],q[Math.min(n-1,m+3)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
+    const c=chap==='34'?Math.max(1,q.findIndex(i=>/15 Temmuz/.test(G.st[i].name))):m,pick=n<=4?q:[q[c-1],q[c],q[Math.min(n-1,c+1)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
   else{unlock(LEVELS[0]);
   for(const nm of ['Taksim','Levent','Vezneciler-İstanbul Üniversitesi']){const s=G.st.find(s=>s.name===nm);if(s)reveal(s)}}
   for(const s of G.st) if(s.revealed){s.rt=-99;s.spawn=1.5+Math.random()*3}
@@ -604,6 +604,10 @@ function reveal(s){s.revealed=true;s.inPool=true;s.rt=G.t;s.spawn=3+Math.random(
 function nearestToRevealed(cands,k){const rev=G.st.filter(s=>s.revealed);
   return cands.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return [d,c]}).sort((a,b)=>a[0]-b[0]).slice(0,k).map(a=>a[1])}
 function pickReveal(){
+  // Bölümde yeni durak, açık bir durağın hattaki komşusu olur: hat gerçek sırasıyla büyür
+  if(G.chap){const q=LINEDEF[G.chap].seq,nb=[];q.forEach((i,k)=>{const s=G.st[i];if(s.revealed||!s.inPool)return;
+      if((k>0&&G.st[q[k-1]].revealed)||(k<q.length-1&&G.st[q[k+1]].revealed))nb.push(s)});
+    if(nb.length){reveal(nb[Math.random()*nb.length|0]);network();return}}
   const rev=G.st.filter(s=>s.revealed), cand=G.st.filter(s=>s.inPool&&!s.revealed);
   if(!cand.length) return;
   const w=cand.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return 1/Math.pow(d+1.2,2.4)});
@@ -764,7 +768,7 @@ function removeLine(L){
   for(const tr of L.trains){const S=L.st[Math.max(0,Math.min(L.st.length-1,tr.i+(tr.dwell>0?0:tr.dir)))];
     for(const p of tr.pax){if(p===S.type)addScore(1);else S.queue.push(p)}
     G.pool.train++;G.pool.car+=tr.cars}
-  L.trains=[];L.st=[];network()}
+  L.trains=[];L.st=[];if(G.undo)G.undo=G.undo.filter(u=>u.L!==L);network()}
 function removeEnd(L,end){
   if(end==='tail'){L.st.pop();network();const n=L.st.length;
     for(const t of L.trains){if(t.i>=n){t.i=n-1;arrive(t)}else if(t.i===n-1&&t.dir===1&&t.dwell<=0)arrive(t)}}
@@ -921,17 +925,28 @@ function drawMap(){
   ctx.drawImage(MC.cv,W/2+(MC.cx-V.cx)*V.s-Wc/2*f,H/2+(MC.cy-V.cy)*V.s-Hc/2*f,Wc*f,Hc*f)}
 // Boğaz köprüleri ve Marmaray tüneli (yaklaşık gerçek konumlar)
 const BRIDGES=[['15 Temmuz Şehitler Köprüsü',41.0478,29.0275,41.0424,29.0390],['Fatih Sultan Mehmet Köprüsü',41.0917,29.0590,41.0893,29.0697],['Yavuz Sultan Selim Köprüsü',41.2030,29.1050,41.2012,29.1190]];
-// Havalimanları: İstanbul Havalimanı (IST/İGA) ve Sabiha Gökçen (SAW), yaklaşık pist konumları
-const AIRPORTS=[['İstanbul Havalimanı (İGA)',41.2620,28.7420,[[41.300,28.7185,41.247,28.7130],[41.300,28.7400,41.247,28.7345],[41.293,28.7680,41.252,28.7640],[41.268,28.6960,41.262,28.7520]]],
-  ['Sabiha Gökçen Havalimanı (SAW)',40.8985,29.3090,[[40.8890,29.2900,40.9065,29.3250],[40.8860,29.2985,40.9030,29.3335]]]];
-function drawAirports(){const rw=Math.max(2.5,Math.min(12,V.s*.11));
-  for(const [name,la,lo,runs] of AIRPORTS){const c=proj(la,lo),cx=sx(c.x),cy=sy(c.y);if(cx<-200||cx>W+200||cy<-200||cy>H+200)continue;
-    ctx.lineCap='butt';
-    for(const [a1,o1,a2,o2] of runs){const a=proj(a1,o1),b=proj(a2,o2);ctx.setLineDash([]);ctx.lineWidth=rw;ctx.strokeStyle='#454D51';ctx.beginPath();ctx.moveTo(sx(a.x),sy(a.y));ctx.lineTo(sx(b.x),sy(b.y));ctx.stroke();
-      if(V.s>=14){ctx.lineWidth=Math.max(.8,rw*.12);ctx.strokeStyle='#F4F5F2';ctx.setLineDash([rw*1.2,rw*1.2]);ctx.stroke();ctx.setLineDash([])}}
-    ctx.lineCap='round';ctx.save();if('letterSpacing' in ctx)ctx.letterSpacing='0px';ctx.font=`700 ${V.s>30?13:11}px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='top';
-    const lab='✈ '+name,ly=sy(proj(la-.036,lo).y);ctx.lineWidth=3;ctx.strokeStyle=C.land;ctx.strokeText(lab,cx,ly);ctx.fillStyle=C.ink;ctx.fillText(lab,cx,ly);ctx.restore()}}
-function drawCrossings(){
+// Havalimanları: harita uygulamalarındaki gibi mavi alan, soluk pistler, uçak simgesi ve ad
+const AIRPORTS=[['İstanbul Havalimanı','IST',41.2575,28.7420,
+    [[41.306,28.700],[41.306,28.733],[41.299,28.744],[41.293,28.766],[41.283,28.776],[41.262,28.781],[41.246,28.779],[41.243,28.756],[41.245,28.728],[41.253,28.700]],
+    [[41.300,28.7185,41.247,28.7130],[41.300,28.7400,41.247,28.7345],[41.293,28.7680,41.252,28.7640],[41.268,28.6960,41.262,28.7520]]],
+  ['Sabiha Gökçen Havalimanı','SAW',40.8975,29.3000,
+    [[40.915,29.296],[40.913,29.311],[40.906,29.330],[40.903,29.345],[40.896,29.349],[40.888,29.330],[40.879,29.310],[40.880,29.288],[40.888,29.278],[40.906,29.283]],
+    [[40.8890,29.2900,40.9065,29.3250],[40.8860,29.2985,40.9030,29.3335]]]];
+function drawAirports(){const dark=document.documentElement.dataset.theme==='dark'||(document.documentElement.dataset.theme!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  const fill=dark?'rgba(74,104,190,.42)':'rgba(92,124,214,.22)',edge=dark?'rgba(120,150,230,.55)':'rgba(70,100,200,.35)',run=dark?'rgba(25,35,70,.55)':'rgba(60,80,150,.25)',ink=dark?'#9DB6FF':'#2F55C8';
+  for(const [name,code,la,lo,poly,runs] of AIRPORTS){const c=proj(la,lo),cx=sx(c.x),cy=sy(c.y);if(cx<-300||cx>W+300||cy<-300||cy>H+300)continue;
+    ctx.save();ctx.setLineDash([]);ctx.beginPath();poly.forEach(([a,o],k)=>{const q=proj(a,o);k?ctx.lineTo(sx(q.x),sy(q.y)):ctx.moveTo(sx(q.x),sy(q.y))});ctx.closePath();
+    ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=1;ctx.strokeStyle=edge;ctx.stroke();
+    if(V.s>=6){ctx.lineCap='butt';ctx.strokeStyle=run;ctx.lineWidth=Math.max(1.5,Math.min(8,V.s*.07));
+      for(const [a1,o1,a2,o2] of runs){const a=proj(a1,o1),b=proj(a2,o2);ctx.beginPath();ctx.moveTo(sx(a.x),sy(a.y));ctx.lineTo(sx(b.x),sy(b.y));ctx.stroke()}}
+    // simge: yuvarlak köşeli mavi kare içinde beyaz uçak
+    const r=V.s>30?13:10;ctx.fillStyle=dark?'#3E6BE0':'#3767E6';ctx.beginPath();ctx.roundRect(cx-r,cy-r,r*2,r*2,r*.45);ctx.fill();
+    ctx.lineWidth=1.5;ctx.strokeStyle='rgba(255,255,255,.85)';ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font=`${r*1.25}px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('✈',cx,cy+1);
+    if('letterSpacing' in ctx)ctx.letterSpacing='0px';ctx.font=`700 ${V.s>30?13:11}px ${BODY}`;ctx.textBaseline='top';ctx.lineJoin='round';
+    const lab=V.s>=4?`${name} (${code})`:code;ctx.lineWidth=3.5;ctx.strokeStyle=dark?'rgba(20,24,28,.85)':'rgba(255,255,255,.9)';ctx.strokeText(lab,cx,cy+r+4);ctx.fillStyle=ink;ctx.fillText(lab,cx,cy+r+4);
+    ctx.restore()}}
+function drawCrossings(){ctx.globalAlpha=1;
   drawAirports();
   const lw=Math.max(2.5,Math.min(9,V.s*.12));ctx.lineCap='round';
   // Marmaray tüneli: Sirkeci – Üsküdar arası deniz altında, kesikli tüp
@@ -993,8 +1008,19 @@ function lineBz(L){const n=L.st.length,P=[],out=[];for(let k=1;k<n;k++)P.push(se
   for(let k=0;k<P.length;k++){const p=P[k],ax=p[0],ay=p[1],bx=p[2],by=p[3],len=Math.hypot(bx-ax,by-ay)*.34,pr=P[k-1],nx=P[k+1];
     const ha=len*(pr?turn(pr,p):1),hb=len*(nx?turn(p,nx):1);
     const tx=pr?bx-pr[0]:bx-ax,ty=pr?by-pr[1]:by-ay,tl=Math.hypot(tx,ty)||1,ux=nx?nx[2]-ax:bx-ax,uy=nx?nx[3]-ay:by-ay,ul=Math.hypot(ux,uy)||1;
-    out.push([ax,ay,ax+tx/tl*ha,ay+ty/tl*ha,bx-ux/ul*hb,by-uy/ul*hb,bx,by])}
+    const via=L.mode==='brt'&&crossings(L.st[k],L.st[k+1])>0?bridgeVia(ax,ay,bx,by):null;
+    out.push(via||[ax,ay,ax+tx/tl*ha,ay+ty/tl*ha,bx-ux/ul*hb,by-uy/ul*hb,bx,by])}
   return out}
+// Metrobüs suyu köprüden geçer: eğri köprünün iki ucundan geçecek şekilde kurulur
+function bridgeVia(ax,ay,bx,by){const D=Math.hypot(bx-ax,by-ay);if(D<1)return null;let best=null,bs=1e9;
+  for(const [,la1,lo1,la2,lo2] of BRIDGES){const p1=proj(la1,lo1),p2=proj(la2,lo2);
+    for(const [e,f] of [[p1,p2],[p2,p1]]){const ex=sx(e.x),ey=sy(e.y),fx=sx(f.x),fy=sy(f.y),d1=Math.hypot(ex-ax,ey-ay),d2=Math.hypot(fx-ex,fy-ey),d3=Math.hypot(bx-fx,by-fy),t=d1+d2+d3;
+      if(t<bs){bs=t;best=[ex,ey,fx,fy,d1,d2,d3]}}}
+  if(!best||bs>D*1.6)return null;
+  const [ex,ey,fx,fy,d1,d2,d3]=best,T=d1+d2+d3,t1=d1/T,t2=(d1+d2)/T;
+  const c=(t)=>[3*(1-t)*(1-t)*t,3*(1-t)*t*t,(1-t)**3,t**3],[a1,b1,o1,z1]=c(t1),[a2,b2,o2,z2]=c(t2),det=a1*b2-a2*b1;if(Math.abs(det)<1e-6)return null;
+  const solve=(q1,q2,p0,p3)=>{const r1=q1-o1*p0-z1*p3,r2=q2-o2*p0-z2*p3;return [(r1*b2-r2*b1)/det,(a1*r2-a2*r1)/det]};
+  const [x1,x2]=solve(ex,fx,ax,bx),[y1,y2]=solve(ey,fy,ay,by);return [ax,ay,x1,y1,x2,y2,bx,by]}
 const bzOf=L=>L._bz&&L._bz.length===L.st.length-1?L._bz:(L._bz=lineBz(L));
 function bzAt(B,u){const k=Math.min(B.length-1,Math.max(0,Math.floor(u))),t=Math.min(1,Math.max(0,u-k)),b=B[k],m=1-t;
   return {x:m*m*m*b[0]+3*m*m*t*b[2]+3*m*t*t*b[4]+t*t*t*b[6],y:m*m*m*b[1]+3*m*m*t*b[3]+3*m*t*t*b[5]+t*t*t*b[7],
@@ -1320,7 +1346,17 @@ function endPtr(e){
   ptrs.delete(e.pointerId);
   if(pinch){if(ptrs.size<2)pinch=null;drag=null;return}
   if(drag&&drag.kind==='insert'&&drag.target){const L=drag.L,k=drag.k;L.st.splice(k,0,drag.target);L.trains.forEach(t=>{if(t.i>=k)t.i++});network()}
+  if(undoSnap){const u=undoSnap,L=u.L;undoSnap=null;
+    if(L.st.length!==u.st.length||L.st.some((x,k)=>x!==u.st[k])){G.undo.push(u);if(G.undo.length>10)G.undo.shift();hud(true)}}
   drag=null}
+// Geri al: son çizim, uzatma ya da araya durak ekleme geri alınır
+let undoSnap=null;
+cv.addEventListener('pointerdown',()=>{undoSnap=drag&&drag.L&&!pinch&&!G.over?{L:drag.L,st:[...drag.L.st]}:null});
+function undoLine(L){const k=G.undo.map(u=>u.L).lastIndexOf(L);if(k<0)return false;const u=G.undo.splice(k,1)[0];
+  if(u.st.length<2){removeLine(L);G.sel=L.id;return true}
+  const old=L.st;L.st=u.st;L._bz=null;network();const n=L.st.length;
+  for(const t of L.trains){const j=L.st.indexOf(old[t.i]);t.i=j>=0?j:Math.min(t.i,n-1);if(t.i>=n-1)t.dir=-1;else if(t.i<=0)t.dir=1;t.t=0;arrive(t)}
+  return true}
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 cv.addEventListener('pointerleave',()=>{hoverSt=null});
 cv.addEventListener('wheel',e=>{e.preventDefault();const p=pos(e);const wx=V.cx+(p.x-W/2)/V.s,wy=V.cy+(p.y-H/2)/V.s;
@@ -1373,6 +1409,7 @@ function hud(force){
       <button class="chip" data-act="train" aria-disabled="${!G.pool.train}">+ Araç (${G.pool.train})</button>
       <button class="chip" data-act="untrain" aria-disabled="${L.trains.length<2}">− Araç</button>
       <button class="chip" data-act="car" aria-disabled="${!(G.pool.car&&L.trains.length)}">+ Vagon (${G.pool.car})</button>
+      ${G.undo.some(u=>u.L===L)?'<button class="chip" data-act="undo">↶ Geri al</button>':''}
       <button class="chip danger" data-act="del">${confirmDel?'Eminim, kaldır':'Hattı kaldır'}</button>
       <span class="dist">Geçtiği ilçeler: ${ds.map(esc).join(', ')||'—'}</span>`}
   // Yalnızca içerik değişince yeniden çiz: aksi halde dokunma sırasında düğme yenilenip tıklama kayboluyordu
@@ -1384,6 +1421,7 @@ $('#actions').addEventListener('click',e=>{const b=e.target.closest('[data-act]'
   if(act==='train'){if(!G.pool.train)toast('Depoda araç yok. Seviye atlayınca ya da hafta başında yeni araç gelir.');else if(!addTrain(L))toast('Önce en az iki duraklı bir hat çiz.')}
   else if(act==='untrain'){if(!removeTrain(L))toast('Hatta en az bir araç kalmalı. Hattı tamamen kaldırmak için "Hattı kaldır".');else toast('Araç depoya döndü, başka bir hatta ekleyebilirsin.')}
   else if(act==='car'){if(!L.trains.length)toast('Vagon takmak için önce hatta bir araç ekle.');else if(!G.pool.car)toast('Depoda vagon yok. Hafta ödülünden vagon seçebilirsin.');else addCar(L)}
+  else if(act==='undo'){if(undoLine(L))toast(`${LABEL(L.id)} son değişiklikten önceki hâline döndü.`)}
   else if(act==='del'){if(!confirmDel){confirmDel=1;setTimeout(()=>{confirmDel=0;hud(true)},3500)}else{confirmDel=0;removeLine(L);toast(`${LABEL(L.id)} kaldırıldı. Araçları depoya döndü.`)}}
   hud(true)});
 // Hızlı araç ekleme: depodaki Araç/Vagon sayısına dokun (seçili ya da en kalabalık hatta) veya sürükleyip bir hattın üstüne bırak
