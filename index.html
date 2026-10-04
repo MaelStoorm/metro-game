@@ -452,7 +452,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 2.6 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 2.7 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">EGEMEN STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -665,6 +665,7 @@ const ACH=[
   {id:'p200',ic:'⭐',name:'Yoğun gün',desc:'Tek oyunda 200 puan topla.',c:15,ok:()=>G&&!G.chap&&G.score>=200},
   {id:'h10',ic:'📅',name:'On hafta',desc:'Bir oyunda 10. haftaya ulaş.',c:15,ok:()=>G&&G.week>=10},
   {id:'filo',ic:'🚆',name:'Büyük filo',desc:'Haritada aynı anda 10 araç çalıştır.',c:10,ok:()=>G&&G.lines.reduce((a,L)=>a+L.trains.length,0)>=10},
+  {id:'olay',ic:'❄',name:'Her havada sefer',desc:'Bir olayı (derbi, bayram, kar ya da arıza) oyun bitmeden atlat.',c:15,ok:()=>(ST.ev||0)>=1},
   {id:'gece',ic:'🌙',name:'Gece seferi',desc:'Gece yarısından sonra tek oyunda 30 yolcu taşı.',c:10,ok:()=>G&&(G.nightDel||0)>=30},
   {id:'yildiz3',ic:'🌟',name:'Üç yıldız',desc:'Bir bölümde 3 yıldız al.',c:10,ok:()=>Object.values(P.chap).some(r=>r.stars>=3)},
   {id:'bolum5',ic:'🗺',name:'Hat hat İstanbul',desc:'5 bölümde yıldız al.',c:20,ok:()=>nChapStars()>=5,p:()=>[nChapStars(),5]},
@@ -755,12 +756,12 @@ function weightedType(exclude){
   let r=Math.random()*pres.reduce((a,t)=>a+TYPES[t].w,0);
   for(const t of pres){r-=TYPES[t].w;if(r<=0)return t}return pres[0]}
 function step(dt){
-  G.t+=dt;
+  G.t+=dt;evTick();
   G.nextReveal-=dt;
   if(G.nextReveal<=0){pickReveal();const n=G.st.filter(s=>s.revealed).length;G.nextReveal=Math.min(13,6.5+n*0.08)}
   const mean=Math.max(7,16-G.t/50)*dif().spawn*(G.chap?1.15:1)/rushOf(hourOf(G.t)),OVER_T=dif().over;
   for(const s of G.st){if(!s.revealed)continue;
-    s.spawn-=dt;if(s.spawn<=0){const ty=weightedType(s.type);if(ty!=null)s.queue.push(ty);s.spawn=-Math.log(1-Math.random()*.95)*mean+1}
+    s.spawn-=dt;if(s.spawn<=0){const ty=weightedType(s.type);if(ty!=null)s.queue.push(ty);s.spawn=(-Math.log(1-Math.random()*.95)*mean+1)/evMul(s)}
     if(s.queue.length>QMAX)s.crowd+=dt/OVER_T;else s.crowd=Math.max(0,s.crowd-dt/(OVER_T*1.5));
     if(s.crowd>.55&&!s.warned){s.warned=true;warnCrowd(s)}else if(s.crowd<.2)s.warned=false;
     if(s.crowd>=1){overflow(s);return}}
@@ -773,7 +774,7 @@ function step(dt){
         continue}
       const a=L.st[tr.i],b=L.st[tr.i+tr.dir];if(!a||!b){arrive(tr);continue}
       const real=REALADJ.has(L.id+':'+Math.min(a.i,b.i)+'-'+Math.max(a.i,b.i));
-      tr.t+=md.speed*VSPEED*dt;if(tr.t>=Math.hypot(b.x-a.x,b.y-a.y)){tr.i+=tr.dir;arrive(tr)}
+      tr.t+=md.speed*VSPEED*dt*evSpeed(L);if(tr.t>=Math.hypot(b.x-a.x,b.y-a.y)){tr.i+=tr.dir;arrive(tr)}
       if(G.modal)return}}
   if(G.t>=G.week*WEEK){G.week++;G.pool.train++;openWeek();dailyAdd('week',G.week);checkAch()}
 }
@@ -787,6 +788,29 @@ function levelUp(){
   $('#lvlUnlock').innerHTML=ids.map(id=>{const L=LINEDEF[id];return `<span class="tag"><i style="--c:${L.color}">${LABEL(id)}</i>${esc(L.name)} · ${MODES[L.mode].label}</span>`}).join('');
   G.modal=true;$('#levelModal').hidden=false;vib(60);
 }
+// ---------- Olaylar: derbi, bayram, kar, arıza. Yeni günün başında bazen biri başlar, atlatınca jeton verir ----------
+const EVENTS=[
+  {k:'derbi',ic:'⚽',name:'Derbi günü',st:['Söğütlüçeşme','Kadıköy','Kabataş','Seyrantepe','Sanayi Mahallesi','Olimpiyat','Başak Konutları'],mult:3.2,dur:.7,
+    msg:n=>`Derbi günü! ${n} çevresine taraftar akını var.`},
+  {k:'bayram',ic:'🎉',name:'Bayram yoğunluğu',st:['Otogar','Alibeyköy Cep Otogarı','Atatürk Havalimanı','Sabiha Gökçen Havalimanı','İstanbul Havalimanı'],mult:2.4,dur:.9,
+    msg:n=>`Bayram yoğunluğu: ${n} tıklım tıklım.`},
+  {k:'kar',ic:'❄',name:'Kar yağışı',speed:.65,dur:.8,msg:()=>'Kar yağıyor! Araçlar yavaş gidiyor.'},
+  {k:'ariza',ic:'⚠',name:'Arıza',dur:.35,msg:n=>`${n} hattında arıza: araçlar bir süre duruyor, yolcuları başka hatta yönlendir.`}];
+const EVST={};for(const e of EVENTS)if(e.st)EVST[e.k]=e.st.map(n=>NODES.findIndex(x=>x.name===n)).filter(i=>i>=0);
+const evDef=()=>G.ev&&EVENTS.find(e=>e.k===G.ev.k);
+function evTick(){const day=dayOf(G.t);
+  if(G.ev&&G.t>=G.ev.until){const e=evDef();G.ev=null;P.coins+=10;G.earned+=10;ST.ev=(ST.ev||0)+1;save('mi-stat',ST);persist();note(`${e.ic} ${e.name} bitti, atlattın · +10 jeton`);checkAch()}
+  if(day===G.evDay)return;G.evDay=day;if(G.ev||G.t<DAY*.8||Math.random()>.45)return;
+  const opts=[];
+  for(const e of EVENTS){
+    if(e.st){const c=EVST[e.k].filter(i=>G.st[i].revealed);if(c.length)opts.push({e,st:c.sort(()=>Math.random()-.5).slice(0,2)})}
+    else if(e.k==='ariza'){const ls=G.lines.filter(L=>L.st.length>1&&L.trains.length);if(ls.length>1)opts.push({e,line:ls[Math.floor(Math.random()*ls.length)].id})}
+    else opts.push({e})}
+  if(!opts.length)return;const o=opts[Math.floor(Math.random()*opts.length)];
+  G.ev={k:o.e.k,until:G.t+o.e.dur*DAY,st:o.st||[],line:o.line||null};
+  toast(`${o.e.ic} ${o.e.msg(o.st?o.st.map(i=>G.st[i].name).join(' ve '):o.line?LABEL(o.line):'')}`);vib([40,60,40])}
+const evMul=s=>G.ev&&G.ev.st.includes(s.i)?evDef().mult:1;
+const evSpeed=L=>!G.ev?1:G.ev.k==='kar'?.65:G.ev.k==='ariza'&&G.ev.line===L.id?0:1;
 // Taşma: önce uyarı, sonra oyun başına bir kez "ek sefer" hakkı; bitişte kamera durağa gider
 function warnCrowd(s){toast(`⚠ ${s.name} dolmak üzere! Bu durağa araç ya da hat ekle.`);vib([60,60,60])}
 function overflow(s){
@@ -805,7 +829,7 @@ function gameOver(s){
 // ---------- Kayıt: oyun her birkaç saniyede ve uygulamadan çıkarken kaydedilir; açılışta "Devam et" ile sürer ----------
 function clearSave(){try{localStorage.removeItem('mi-save')}catch(e){}}
 function saveGame(){if(!G||G.over||G.t<3)return;
-  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed'])g[k]=G[k];
+  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay'])g[k]=G[k];
   save('mi-save',{v:1,g,st:G.st.filter(s=>s.inPool||s.revealed).map(s=>[s.i,s.revealed?1:0,s.queue,+s.crowd.toFixed(3),+s.spawn.toFixed(2)]),
     lines:G.lines.map(L=>[L.id,L.unlocked?1:0,L.st.map(s=>s.i),L.trains.map(t=>[t.i,t.dir,+t.t.toFixed(3),+t.dwell.toFixed(2),t.pax,t.cars])])})}
 function loadGame(d){newGame(d.g.chap);Object.assign(G,d.g,{paused:true,modal:false,over:false});
@@ -875,7 +899,18 @@ function drawMap(){
   ctx.drawImage(MC.cv,W/2+(MC.cx-V.cx)*V.s-Wc/2*f,H/2+(MC.cy-V.cy)*V.s-Hc/2*f,Wc*f,Hc*f)}
 // Boğaz köprüleri ve Marmaray tüneli (yaklaşık gerçek konumlar)
 const BRIDGES=[['15 Temmuz Şehitler Köprüsü',41.0478,29.0275,41.0424,29.0390],['Fatih Sultan Mehmet Köprüsü',41.0917,29.0590,41.0893,29.0697],['Yavuz Sultan Selim Köprüsü',41.2030,29.1050,41.2012,29.1190]];
+// Havalimanları: İstanbul Havalimanı (IST/İGA) ve Sabiha Gökçen (SAW), yaklaşık pist konumları
+const AIRPORTS=[['İstanbul Havalimanı (İGA)',41.2620,28.7420,[[41.300,28.7185,41.247,28.7130],[41.300,28.7400,41.247,28.7345],[41.293,28.7680,41.252,28.7640],[41.268,28.6960,41.262,28.7520]]],
+  ['Sabiha Gökçen Havalimanı (SAW)',40.8985,29.3090,[[40.8890,29.2900,40.9065,29.3250],[40.8860,29.2985,40.9030,29.3335]]]];
+function drawAirports(){const rw=Math.max(2.5,Math.min(12,V.s*.11));
+  for(const [name,la,lo,runs] of AIRPORTS){const c=proj(la,lo),cx=sx(c.x),cy=sy(c.y);if(cx<-200||cx>W+200||cy<-200||cy>H+200)continue;
+    ctx.lineCap='butt';
+    for(const [a1,o1,a2,o2] of runs){const a=proj(a1,o1),b=proj(a2,o2);ctx.setLineDash([]);ctx.lineWidth=rw;ctx.strokeStyle='#454D51';ctx.beginPath();ctx.moveTo(sx(a.x),sy(a.y));ctx.lineTo(sx(b.x),sy(b.y));ctx.stroke();
+      if(V.s>=14){ctx.lineWidth=Math.max(.8,rw*.12);ctx.strokeStyle='#F4F5F2';ctx.setLineDash([rw*1.2,rw*1.2]);ctx.stroke();ctx.setLineDash([])}}
+    ctx.lineCap='round';ctx.save();if('letterSpacing' in ctx)ctx.letterSpacing='0px';ctx.font=`700 ${V.s>30?13:11}px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='top';
+    const lab='✈ '+name,ly=sy(proj(la-.036,lo).y);ctx.lineWidth=3;ctx.strokeStyle=C.land;ctx.strokeText(lab,cx,ly);ctx.fillStyle=C.ink;ctx.fillText(lab,cx,ly);ctx.restore()}}
 function drawCrossings(){
+  drawAirports();
   const lw=Math.max(2.5,Math.min(9,V.s*.12));ctx.lineCap='round';
   // Marmaray tüneli: Sirkeci – Üsküdar arası deniz altında, kesikli tüp
   const A=NODES.find(n=>n.name==='Sirkeci'),B=NODES.find(n=>n.name==='Üsküdar');
@@ -1074,7 +1109,14 @@ function drawOffscreen(){
     ctx.rotate(a);ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(8,0);ctx.lineTo(-4,-6);ctx.lineTo(-4,6);ctx.closePath();ctx.fill();ctx.restore()}}
 function draw(){ctx.setTransform(DPR,0,0,DPR,0,0);drawMap();
   const na=nightA(hourOf(G.t));if(na>0){ctx.fillStyle=`rgba(8,16,34,${na})`;ctx.fillRect(0,0,W,H)}
-  drawReal();drawLines();drawTrains();drawStations()}
+  drawReal();drawLines();drawTrains();drawStations();drawEvent()}
+function drawEvent(){if(!G.ev)return;const e=evDef(),t=performance.now()/1000;
+  if(G.ev.st.length){ctx.save();ctx.strokeStyle=C.gold;ctx.lineWidth=3;
+    for(const i of G.ev.st){const s=G.st[i],X=sx(s.x),Y=sy(s.y),r=14+((t*1.2)%1)*18;ctx.globalAlpha=1-((t*1.2)%1);ctx.beginPath();ctx.arc(X,Y,r,0,Math.PI*2);ctx.stroke();
+      ctx.globalAlpha=1;ctx.font=`16px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(e.ic,X,Y-16)}ctx.restore()}
+  if(G.ev.k==='ariza'){const L=lineById(G.ev.line);if(L&&L._bz&&L._bz.length){const q=bzAt(L._bz,L._bz.length/2);ctx.save();ctx.font=`700 13px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='middle';
+    const lab=`⚠ ${LABEL(L.id)} arızalı`,w=ctx.measureText(lab).width+14;ctx.fillStyle=C.warn;ctx.beginPath();ctx.roundRect(q.x-w/2,q.y-12,w,24,12);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(lab,q.x,q.y);ctx.restore()}}
+  if(G.ev.k==='kar'){ctx.save();ctx.fillStyle='rgba(255,255,255,.85)';for(let k=0;k<90;k++){const sp=20+(k*37)%40,x=((k*97.3)+Math.sin(t+k)*12)%W,y=((k*53.1)+t*sp)%H;ctx.beginPath();ctx.arc((x+W)%W,y,1.2+(k%3)*.6,0,Math.PI*2);ctx.fill()}ctx.restore()}}
 
 
 // ---------- Ses ----------
@@ -1282,7 +1324,7 @@ function hud(force){
     G.lines.map(l=>l.st.length+':'+l.trains.length+':'+l.trains.reduce((a,t)=>a+t.cars,0)).join(),[...presentTypes()].join()].join('|');
   if(sig===lastHud&&!force)return;lastHud=sig;
   $('#score').textContent=G.score;{const h=hourOf(G.t),hh=String(Math.floor(h)).padStart(2,'0'),mm=Math.floor(h%1*2)?'30':'00',r=rushOf(h);
-    $('#clock').textContent=`${G.week}. hafta · ${DAYS[dayOf(G.t)%7]} ${hh}:${mm}${r>1?' · Yoğun saat':r<1?' · Gece':''}`}
+    $('#clock').textContent=`${G.week}. hafta · ${DAYS[dayOf(G.t)%7]} ${hh}:${mm}${r>1?' · Yoğun saat':r<1?' · Gece':''}${G.ev?` · ${evDef().ic} ${evDef().name}`:''}`}
   const lo=G.level>1?needFor(G.level-1):0,hi=G.level<LEVELS.length?needFor(G.level):null;
   if(G.chap){const t=chapTarget(G.chap),st=G.chapStar,nt=st===0?t:st===1?Math.ceil(t*1.6):Math.ceil(t*2.3);
     $('#lvlName').textContent=`Bölüm ${CHAPS.indexOf(G.chap)+1}`;$('#lvlNext').textContent=`${G.score}/${nt} · ${'★'.repeat(st)}${'☆'.repeat(3-st)}`;
