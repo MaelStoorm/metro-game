@@ -335,9 +335,9 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <details>
         <summary>Nasıl oynanır</summary>
         <ul>
-          <li>Bir istasyondan diğerine sürükleyerek hat kur.</li>
-          <li>Hattın ucundaki T tutamacını sürükleyerek uzat. Önceki durağa geri çekersen son durak kalkar.</li>
-          <li>Hattın ortasından tutup bir istasyona bırakırsan araya durak eklenir.</li>
+          <li>Bir istasyondan diğerine sürükleyerek hat kur. Ya da önce bir durağa, sonra diğerine dokun: hat kendiliğinden çizilir.</li>
+          <li>Hattın ucundaki T tutamacına basılı tut, halka dolunca sürükleyerek uzat. Önceki durağa geri çekersen son durak kalkar.</li>
+          <li>Hattın ortasına basılı tut, halka dolunca bir istasyona sürükle: araya durak eklenir.</li>
           <li>Yolcunun şekli gitmek istediği yerin türü. Her teslim edilen yolcu 1 puan.</li>
           <li>Metro ve tramvayla Boğaz'ı ya da Haliç'i geçmek geçit harcar. Marmaray, metrobüs ve teleferik suyu bedava geçer.</li>
           <li>Bir istasyonda 6'dan fazla yolcu birikirse sayaç dolar. Dolarsa oyun biter.</li>
@@ -366,7 +366,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="secondary" id="btnSettings2">Ayarlar</button>
         </div>
       </div>
-      <p class="credit"><b class="studio-name">MAELSTROM STUDIO</b> · © 2026. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Metro İstanbul ağ haritasından.</p>
+      <p class="credit"><b class="studio-name">MAELSTROM STUDIO</b> · © 2026 Egemen, tüm hakları saklıdır. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Metro İstanbul ağ haritasından.</p>
     </div>
   </div>
 
@@ -469,13 +469,14 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
         <div class="set-row"><div class="lbl"><b>Grafik</b><span>Pil tasarrufu daha az çözünürlük ve 30 kare/sn kullanır</span></div>
           <div class="opts" data-opt="gfx"><button data-v="yuksek">Yüksek</button><button data-v="denge">Dengeli</button><button data-v="pil">Pil</button></div></div>
         <div class="set-row"><div class="lbl"><b>Gerçek güzergahlar</b><span>Hatların gerçek rotası silik çizgiyle</span></div><button class="switch" role="switch" data-cfg="real" aria-label="Gerçek güzergahlar"></button></div>
+        <div class="set-row"><div class="lbl"><b>Hattı basılı tutarak tut</b><span>Uzatmak ya da durak eklemek için önce yarım saniye basılı tut (yanlışlıkla çizimi önler)</span></div><button class="switch" role="switch" data-cfg="hold" aria-label="Basılı tutarak tut"></button></div>
         <div class="set-row"><div class="lbl"><b>Gece seferleri</b><span>Metrolar 00:30-06:00 arası kapanır, metrobüs ve seçtiğin hatlar çalışır</span></div><button class="switch" role="switch" data-cfg="night" aria-label="Gece seferleri"></button></div>
         <div class="set-row"><div class="lbl"><b>İlçe sınırları ve adları</b></div><button class="switch" role="switch" data-cfg="districts" aria-label="İlçe sınırları"></button></div>
       </div>
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.8 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Metro İstanbul · sürüm 3.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -596,7 +597,7 @@ const proj=(lat,lon)=>({x:(lon-29.0)*84.0,y:-(lat-41.0)*111.2});
 // ---------- Kalıcı kayıt ----------
 function load(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const CFG = Object.assign({voice:'',english:true,vol:70,vehicle:true,announce:true,vibrate:true,diff:'normal',speed:'1',theme:'system',labels:'auto',real:true,districts:true,gfx:'denge',remind:true,night:true},load('mi-cfg',{}));
+const CFG = Object.assign({voice:'',english:true,vol:70,vehicle:true,announce:true,vibrate:true,diff:'normal',speed:'1',theme:'system',labels:'auto',real:true,districts:true,gfx:'denge',remind:true,night:true,hold:true},load('mi-cfg',{}));
 const saveCfg=()=>save('mi-cfg',CFG);
 const dif=()=>DIFF[CFG.diff]||DIFF.normal;
 function vib(p){if(!CFG.vibrate)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
@@ -1220,7 +1221,14 @@ function drawLines(){
   ctx.globalAlpha=1;
   for(const h of handles()){ctx.strokeStyle=h.L.color;ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(h.x0,h.y0);ctx.lineTo(h.x,h.y);
     ctx.moveTo(h.x-h.uy*9,h.y+h.ux*9);ctx.lineTo(h.x+h.uy*9,h.y-h.ux*9);ctx.stroke()}
-  if(drag&&drag.x!=null&&drag.L){
+  if(G.tapFrom){const X=sx(G.tapFrom.x),Y=sy(G.tapFrom.y),t=performance.now()/1000;ctx.save();ctx.setLineDash([6,5]);ctx.lineDashOffset=-t*20;ctx.lineWidth=3;
+    const ends=G.lines.filter(l=>l.st.length>1&&(l.st[0]===G.tapFrom||l.st[l.st.length-1]===G.tapFrom)),L=ends.find(l=>l.id===G.sel)||ends[0]||freeLine();
+    ctx.strokeStyle=L?L.color:C.ink;ctx.beginPath();ctx.arc(X,Y,22,0,Math.PI*2);ctx.stroke();ctx.restore()}
+  if(drag&&drag.armed===false&&drag.L){const f=Math.min(1,(performance.now()-drag.t0)/(HOLD*1000));ctx.save();ctx.lineCap='round';
+    ctx.lineWidth=5;ctx.strokeStyle='rgba(0,0,0,.18)';ctx.beginPath();ctx.arc(drag.ox,drag.oy,24,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle=drag.L.color;ctx.beginPath();ctx.arc(drag.ox,drag.oy,24,-Math.PI/2,-Math.PI/2+f*Math.PI*2);ctx.stroke();ctx.restore()}
+  else if(drag&&drag.armed&&drag.ox!=null&&drag.L&&!drag.moved&&drag.x===drag.ox&&drag.y===drag.oy){ctx.save();ctx.lineWidth=5;ctx.strokeStyle=drag.L.color;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(drag.ox,drag.oy,24,0,Math.PI*2);ctx.stroke();ctx.restore()}
+  if(drag&&drag.x!=null&&drag.L&&drag.armed!==false){
     const L=drag.L;ctx.save();ctx.strokeStyle=L.color;ctx.lineWidth=6;ctx.globalAlpha=.6;ctx.setLineDash([10,8]);ctx.beginPath();
     if(drag.kind==='new'){ctx.moveTo(sx(drag.from.x),sy(drag.from.y));ctx.lineTo(drag.x,drag.y)}
     else if(drag.kind==='extend'){const n=L.st.length;if(n){const E=drag.end==='tail'?L.st[n-1]:L.st[0];ctx.moveTo(sx(E.x),sy(E.y));ctx.lineTo(drag.x,drag.y)}}
@@ -1474,6 +1482,11 @@ let lastWarn=0;function warn(msg){const n=performance.now();if(n-lastWarn>1800){
 const noGecit=()=>warn('Geçit kalmadı. Haftalık ödülden geçit seç ya da suyu Marmaray, metrobüs veya teleferikle geç.');
 const tooLong=L=>{const m=modeOf(L).max;if(m&&L.st.length>=m){warn(`${LABEL(L.id)} ${modeOf(L).label.toLocaleLowerCase('tr')} hattı en fazla ${m} durak olabilir.`);return true}return false};
 
+// Var olan hattı uzatmak ya da araya durak eklemek için önce basılı tutmak gerekir: halka dolunca hat "tutulur".
+// Halka dolmadan parmak kayarsa harita kaydırılır, böylece yanlışlıkla hat değişmez.
+const HOLD=.45;
+function holdDrag(d){if(CFG.hold===false){d.armed=true;return d}d.armed=false;d.t0=performance.now();d.ox=d.x;d.oy=d.y;
+  d.timer=setTimeout(()=>{if(drag===d){d.armed=true;vib(25)}},HOLD*1000);return d}
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
@@ -1482,14 +1495,18 @@ cv.addEventListener('pointerdown',e=>{
   if(ptrs.size>2)return;
   const pan={kind:'pan',lx:p.x,ly:p.y};
   if(e.button===1||e.button===2||G.over){drag=pan;return}
-  const h=handleAt(p.x,p.y,isTouch?26:17);if(h){drag={kind:'extend',L:h.L,end:h.end,x:p.x,y:p.y};G.sel=h.L.id;return}
-  const s=stationAt(p.x,p.y,isTouch?26:18);
+  const s=stationAt(p.x,p.y,isTouch?30:18);
+  // Hattın ucundaki durağa basıp sürüklemek o hattı uzatır (telefonda T tutamacını aramaya gerek yok)
+  if(s){const ends=G.lines.filter(l=>l.st.length>1&&(l.st[0]===s||l.st[l.st.length-1]===s)),L=ends.find(l=>l.id===G.sel)||ends[0];
+    if(L){drag={kind:'extend',L,end:L.st[L.st.length-1]===s?'tail':'head',x:p.x,y:p.y,armed:true,fromSt:s,ox0:p.x,oy0:p.y};G.sel=L.id;return}}
+  const h=!s&&handleAt(p.x,p.y,isTouch?26:17);if(h){drag=holdDrag({kind:'extend',L:h.L,end:h.end,x:p.x,y:p.y});G.sel=h.L.id;return}
   const tv=!s||Math.hypot(sx(s.x)-p.x,sy(s.y)-p.y)>12?trainAt(p.x,p.y,isTouch?20:14):null;
   if(tv){vSel=tv;G.sel=tv.L.id;renderVinfo();drag=pan;return}
   if(vSel){vSel=null;renderVinfo()}
-  if(s){const L=freeLine();if(!L){warn('Açık hatların hepsi kullanımda. Seviye atla ya da bir hattı kaldır.');drag=pan;return}
-    drag={kind:'new',L,from:s,x:p.x,y:p.y};return}
-  const sg=segmentAt(p.x,p.y,isTouch?24:12);if(sg){drag={kind:'insert',L:sg.L,k:sg.k,target:null,moved:false,x:p.x,y:p.y};G.sel=sg.L.id;return}
+  if(s){const L=freeLine();if(!L){drag={kind:'tap',st:s,ox0:p.x,oy0:p.y,lx:p.x,ly:p.y};return}
+    drag={kind:'new',L,from:s,x:p.x,y:p.y,ox0:p.x,oy0:p.y};return}
+  if(G.tapFrom){G.tapFrom=null}
+  const sg=segmentAt(p.x,p.y,isTouch?24:12);if(sg){drag=holdDrag({kind:'insert',L:sg.L,k:sg.k,target:null,moved:false,x:p.x,y:p.y});G.sel=sg.L.id;return}
   drag=pan;
 });
 cv.addEventListener('pointermove',e=>{
@@ -1499,29 +1516,50 @@ cv.addEventListener('pointermove',e=>{
   hoverSt=e.pointerType==='mouse'?stationAt(p.x,p.y,18):null;
   if(!drag){cv.style.cursor=hoverSt||handleAt(p.x,p.y,17)?'pointer':segmentAt(p.x,p.y,10)?'grab':'default';return}
   const rad=isTouch?26:18;
+  if(drag.kind==='tap'){if(Math.hypot(p.x-drag.ox0,p.y-drag.oy0)>10){if(!G.tapFrom)warn('Açık hatların hepsi kullanımda. Seviye atla ya da bir hattı kaldır.');drag={kind:'pan',lx:p.x,ly:p.y}}return}
   if(drag.kind==='pan'){V.cx-=(p.x-drag.lx)/V.s;V.cy-=(p.y-drag.ly)/V.s;if(Math.abs(p.x-drag.lx)+Math.abs(p.y-drag.ly)>0)setManual(true);drag.lx=p.x;drag.ly=p.y;return}
+  if(drag.armed===false){if(performance.now()-drag.t0>=HOLD*1000){drag.armed=true;vib(25)}
+    else{if(Math.hypot(p.x-drag.ox,p.y-drag.oy)>10){clearTimeout(drag.timer);drag={kind:'pan',lx:p.x,ly:p.y};undoSnap=null}return}}
   drag.x=p.x;drag.y=p.y;const s=stationAt(p.x,p.y,rad);
-  if(drag.kind==='new'){if(s&&s!==drag.from){const L=drag.L;
-      if(segCost(L,drag.from,s)>gecitFree()){noGecit();return}
-      L.st=[drag.from,s];network();G.sel=L.id;
-      if(!addTrain(L))warn(`${LABEL(L.id)} çizildi ama depoda araç yok. Seviye ya da hafta ödülüyle araç gelince ekle.`);
-      drag={kind:'extend',L,end:'tail',x:p.x,y:p.y}}return}
-  if(drag.kind==='extend'){const L=drag.L,n=L.st.length;if(n<2)return;const tail=drag.end==='tail';
+  if(drag.kind==='new'){if(Math.hypot(p.x-drag.ox0,p.y-drag.oy0)>10)drag.moved=true;if(s&&s!==drag.from){const L=drag.L;
+      if(!newLineTo(L,drag.from,s))return;
+      drag={kind:'extend',L,end:'tail',x:p.x,y:p.y,armed:true}}return}
+  if(drag.kind==='extend'){if(drag.fromSt&&Math.hypot(p.x-drag.ox0,p.y-drag.oy0)>10)drag.moved=true;extendTo(drag.L,drag.end,s);return}
+  if(drag.kind==='insert'){drag.moved=true;const L=drag.L,a=L.st[drag.k-1],b=L.st[drag.k];drag.target=null;
+    if(s&&!L.st.includes(s)){if(modeOf(L).max&&L.st.length>=modeOf(L).max){tooLong(L);return}
+      const need=segCost(L,a,s)+segCost(L,s,b)-segCost(L,a,b);if(need>gecitFree())noGecit();else drag.target=s}}
+});
+function newLineTo(L,from,s){if(segCost(L,from,s)>gecitFree()){noGecit();return false}
+  L.st=[from,s];network();G.sel=L.id;
+  if(!addTrain(L))warn(`${LABEL(L.id)} çizildi ama depoda araç yok. Seviye ya da hafta ödülüyle araç gelince ekle.`);return true}
+function extendTo(L,end,s){{const n=L.st.length;if(n<2)return;const tail=end==='tail';
     const E=tail?L.st[n-1]:L.st[0],Nb=tail?L.st[n-2]:L.st[1];
     if(!s||s===E)return;
     if(s===Nb){if(n>2)removeEnd(L,drag.end);return}
     if(L.st.includes(s))return;
     if(tooLong(L))return;
+    // Durak son iki durağın arasında kalıyorsa (geri dönüş) uca eklemek yerine araya eklenir: hat üst üste binmez
+    {const dx=E.x-Nb.x,dy=E.y-Nb.y,l2=dx*dx+dy*dy,t=((s.x-Nb.x)*dx+(s.y-Nb.y)*dy)/(l2||1),px=Nb.x+dx*t,py=Nb.y+dy*t;
+      if(t>.05&&t<.95&&Math.hypot(s.x-px,s.y-py)<Math.sqrt(l2)*.35){const k=tail?n-1:1;
+        if(segCost(L,Nb,s)+segCost(L,s,E)-segCost(L,Nb,E)>gecitFree()){noGecit();return}
+        L.st.splice(k,0,s);L.trains.forEach(t=>{if(t.i>=k)t.i++});network();return}}
     if(segCost(L,E,s)>gecitFree()){noGecit();return}
     if(tail)L.st.push(s);else{L.st.unshift(s);L.trains.forEach(t=>t.i++)}
-    network();return}
-  if(drag.kind==='insert'){drag.moved=true;const L=drag.L,a=L.st[drag.k-1],b=L.st[drag.k];drag.target=null;
-    if(s&&!L.st.includes(s)){if(modeOf(L).max&&L.st.length>=modeOf(L).max){tooLong(L);return}
-      const need=segCost(L,a,s)+segCost(L,s,b)-segCost(L,a,b);if(need>gecitFree())noGecit();else drag.target=s}}
-});
+    network();return}}
+// Dokunarak çizim: bir durağa dokun, sonra bağlanacak durağa dokun. İlk durak bir hattın ucuysa o hat uzar, değilse yeni hat çizilir.
+function tapStation(s){const A=G.tapFrom;
+  if(!A||A===s){G.tapFrom=A===s?null:s;if(G.tapFrom&&!G.tapTold){G.tapTold=true;toast('Şimdi bağlamak istediğin durağa dokun. Vazgeçmek için boş yere dokun.')}return}
+  G.tapFrom=null;
+  const ends=G.lines.filter(l=>l.st.length>1&&(l.st[0]===A||l.st[l.st.length-1]===A)),L=ends.find(l=>l.id===G.sel)||ends[0];
+  if(L){if(L.st.includes(s)){toast(`${s.name} zaten ${LABEL(L.id)} hattında.`);return}const snap=[...L.st];
+    extendTo(L,L.st[L.st.length-1]===A?'tail':'head',s);G.sel=L.id;if(L.st.length!==snap.length){G.undo.push({L,st:snap});if(G.undo.length>10)G.undo.shift()}hud(true);return}
+  const N=freeLine();if(!N){warn('Açık hatların hepsi kullanımda. Seviye atla ya da bir hattı kaldır.');return}
+  if(newLineTo(N,A,s)){G.undo.push({L:N,st:[]});if(G.undo.length>10)G.undo.shift()}hud(true)}
 function endPtr(e){
-  ptrs.delete(e.pointerId);
+  ptrs.delete(e.pointerId);if(drag&&drag.timer)clearTimeout(drag.timer);
+  if(drag&&drag.armed===false&&performance.now()-drag.t0<HOLD*1000&&!G.hintHold){G.hintHold=true;toast('Hattı uzatmak ya da araya durak eklemek için hattın üstüne basılı tut, halka dolunca sürükle.')}
   if(pinch){if(ptrs.size<2)pinch=null;drag=null;return}
+  if(drag&&((drag.kind==='new'&&!drag.moved)||drag.kind==='tap'||(drag.kind==='extend'&&drag.fromSt&&!drag.moved))){const st=drag.from||drag.st||drag.fromSt;drag=null;undoSnap=null;tapStation(st);return}
   if(drag&&drag.kind==='insert'&&drag.target){const L=drag.L,k=drag.k;L.st.splice(k,0,drag.target);L.trains.forEach(t=>{if(t.i>=k)t.i++});network()}
   if(undoSnap){const u=undoSnap,L=u.L;undoSnap=null;
     if(L.st.length!==u.st.length||L.st.some((x,k)=>x!==u.st[k])){G.undo.push(u);if(G.undo.length>10)G.undo.shift();hud(true)}}
