@@ -47,7 +47,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * Metro İstanbul: web sürümüyle aynı oyun (assets/index.html) tam ekran bir WebView içinde.
+ * Raylı İstanbul: web sürümüyle aynı oyun (assets/index.html) tam ekran bir WebView içinde.
  * Oyun window.AndroidTTS köprüsünü kullanır: durak anonsları (metin okuma), fotoğraf kaydetme,
  * hatırlatma bildirimi ve ödüllü reklamla devam etme.
  */
@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
             return out.toString();
         }
 
-        /** Fotoğraf modu: PNG (base64) Galeri > Pictures > Metro İstanbul klasörüne kaydedilir. */
+        /** Fotoğraf modu: PNG (base64) Galeri > Pictures > Raylı İstanbul klasörüne kaydedilir. */
         @JavascriptInterface
         public boolean saveImage(String base64, String name) {
             return saveImageNow(base64, name);
@@ -451,7 +451,7 @@ public class MainActivity extends Activity {
                 ContentValues cv = new ContentValues();
                 cv.put(MediaStore.MediaColumns.DISPLAY_NAME, file);
                 cv.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
-                cv.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Metro İstanbul");
+                cv.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Raylı İstanbul");
                 ContentResolver cr = getContentResolver();
                 Uri uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
                 if (uri == null) return false;
@@ -462,7 +462,7 @@ public class MainActivity extends Activity {
                 return true;
             }
             // Android 9 ve öncesi: izin istemeden uygulamanın kendi Resimler klasörüne.
-            File dir = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Metro İstanbul");
+            File dir = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "Raylı İstanbul");
             if (!dir.isDirectory() && !dir.mkdirs()) return false;
             try (FileOutputStream fos = new FileOutputStream(new File(dir, file))) {
                 fos.write(png);
