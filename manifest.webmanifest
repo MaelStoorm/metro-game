@@ -1,6 +1,6 @@
 {
-  "name": "Metro İstanbul",
-  "short_name": "Metro İstanbul",
+  "name": "Raylı İstanbul",
+  "short_name": "Raylı İstanbul",
   "description": "İstanbul'un raylı sistem hatları ve metrobüsüyle hat çizme ve yolcu taşıma oyunu.",
   "lang": "tr",
   "start_url": "./",

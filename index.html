@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Metro İstanbul">
+<meta name="apple-mobile-web-app-title" content="Raylı İstanbul">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>Metro İstanbul</title>
+<title>Raylı İstanbul</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -207,7 +207,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
 
   <header class="top">
     <div class="brand" id="brand">
-      <span class="eyebrow">Metro İstanbul</span>
+      <span class="eyebrow">Raylı İstanbul</span>
       <div class="score"><b id="score">0</b><span>puan</span></div>
       <div class="lvl">
         <div class="lvl-row"><strong id="lvlName">Seviye 1</strong><span id="lvlNext">Sonraki: T1</span></div>
@@ -290,7 +290,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
 
   <div class="toast" id="toast" role="status"></div>
 
-  <div id="splash" role="img" aria-label="Metro İstanbul açılış ekranı">
+  <div id="splash" role="img" aria-label="Raylı İstanbul açılış ekranı">
     <div class="sp-box">
       <div class="sp-studio"><span class="studio-name">MAELSTROM STUDIO</span><small>sunar</small></div>
       <svg class="sp-emb" viewBox="0 0 512 512" aria-hidden="true">
@@ -322,14 +322,14 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
   </g>
 </svg>
 
-      <h1>Metro İstanbul</h1>
+      <h1>Raylı İstanbul</h1>
       <div class="sp-sub">Şehrin raylarını sen kur</div>
     </div>
   </div>
   <div class="overlay" id="intro">
     <div class="card">
       <span class="eyebrow">İstanbul büyüyor</span>
-      <h1>Metro İstanbul</h1>
+      <h1>Raylı İstanbul</h1>
       <p class="lede">İstanbul'un raylı sistem hatları (M2 Sefaköy, M7 Esenyurt ve M12 dahil), metrobüsü ve 39 ilçesi gerçek haritasıyla burada. Oyna'da M2 ile başla, puan topladıkça yeni hatlar açılsın. Bölümler'de her hattı tek tek oyna.</p>
       <div class="daily" id="dailyBox"></div>
       <details>
@@ -476,7 +476,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
       </div>
-      <p class="credit">Metro İstanbul · sürüm 3.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Raylı İstanbul · sürüm 3.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -1674,14 +1674,14 @@ $('#pmShop').onclick=()=>openShop();
 function takePhoto(){draw();const W0=cv.width,H0=cv.height,o=document.createElement('canvas');o.width=W0;o.height=H0+Math.round(96*DPR);const c=o.getContext('2d');
   c.fillStyle=C.paper||'#fff';c.fillRect(0,0,o.width,o.height);c.drawImage(cv,0,0);c.scale(DPR,DPR);const w=W0/DPR,y=H0/DPR;
   c.fillStyle=C.paper||'#fff';c.fillRect(0,y,w,96);c.fillStyle=C.ink||'#222';c.textBaseline='middle';
-  c.font=`700 22px ${DISP}`;c.fillText('Metro İstanbul',16,y+24);c.font=`500 13px ${BODY}`;c.fillStyle=C['ink-2']||'#555';
+  c.font=`700 22px ${DISP}`;c.fillText('Raylı İstanbul',16,y+24);c.font=`500 13px ${BODY}`;c.fillStyle=C['ink-2']||'#555';
   const ls=G.lines.filter(L=>L.st.length>1);c.fillText(`${G.score} puan · ${G.week}. hafta · ${ls.length} hat · ${G.st.filter(s=>s.revealed).length} durak${G.daily?' · Günün haritası':''}`,16,y+50);
   c.font=`700 11px ${DISP}`;try{c.letterSpacing='2px'}catch(e){}c.fillText('MAELSTROM STUDIO',16,y+78);try{c.letterSpacing='0px'}catch(e){}
   ls.slice(-8).reverse().forEach((L,k)=>{const X=w-30-k*36;c.fillStyle=L.color;c.beginPath();c.roundRect(X-15,y+66,30,22,5);c.fill();c.fillStyle='#fff';c.textAlign='center';c.font=`700 12px ${DISP}`;c.fillText(LABEL(L.id),X,y+77)});
   const url=o.toDataURL('image/png'),name=`metro-istanbul-${G.score}.png`;ST.photo=(ST.photo||0)+1;save('mi-stat',ST);checkAch();
-  if(window.AndroidTTS&&AndroidTTS.saveImage){let ok=false;try{ok=AndroidTTS.saveImage(url.split(',')[1],name)}catch(e){}toast(ok?'📷 Fotoğraf Galeri > Pictures > Metro İstanbul klasörüne kaydedildi.':'📷 Fotoğraf kaydedilemedi.');return}
+  if(window.AndroidTTS&&AndroidTTS.saveImage){let ok=false;try{ok=AndroidTTS.saveImage(url.split(',')[1],name)}catch(e){}toast(ok?'📷 Fotoğraf Galeri > Pictures > Raylı İstanbul klasörüne kaydedildi.':'📷 Fotoğraf kaydedilemedi.');return}
   o.toBlob(b=>{const file=new File([b],name,{type:'image/png'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Metro İstanbul ağım'}).catch(()=>{});return}
+    if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Raylı İstanbul ağım'}).catch(()=>{});return}
     const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('📷 Fotoğraf indirildi.')},'image/png')}
 $('#pmPhoto').onclick=takePhoto;
 $('#pmMenu').onclick=()=>{saveGame();$('#btnStart').textContent=`Devam et · ${G.score} puan`;$('#btnNew').hidden=false;renderDaily();renderAchCount();renderSides();renderDmap();$('#intro').hidden=false;hud(true)};

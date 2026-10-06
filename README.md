@@ -1,4 +1,4 @@
-# Metro İstanbul
+# Raylı İstanbul
 
 İstanbul'un raylı sistem hatları ve metrobüsüyle oynanan, Mini Metro tarzı hat çizme oyunu.
 
