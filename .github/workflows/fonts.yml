@@ -1,0 +1,22 @@
+name: Yazi tipleri
+on:
+  push:
+    branches: [yazi-tipleri]
+permissions:
+  contents: write
+jobs:
+  fonts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: python3 fetch_fonts.py 2>&1 | tee fetch.log
+      - run: |
+          git add -A out fetch.log || true
+          git add -f fetch.log
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Yazı tipleri" || true
+          git push -q origin HEAD:yazi-tipleri
+      - if: failure()
+        run: |
+          git add -f fetch.log || true
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Hata" || true
+          git push -q origin HEAD:yazi-tipleri
