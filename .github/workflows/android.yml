@@ -1,0 +1,88 @@
+name: Android AAB
+
+# main dalına her gönderimde imzasız bir Google Play paketi (AAB) derlenir ve
+# builds dalına metro-istanbul-unsigned.aab olarak konur. commit.txt hangi commit'ten derlendiğini yazar.
+# Derleme başarısız olursa günlük, builds dalına build-log.txt olarak eklenir (son sağlam AAB silinmez).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-aab
+  cancel-in-progress: true
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      LOG: ${{ github.workspace }}/build.log
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Android SDK lisansları ve platform
+        run: |
+          set -o pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-yok}" | tee -a "$LOG"
+          SDKM="${ANDROID_HOME:-}/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKM" ] || SDKM="$(command -v sdkmanager || true)"
+          if [ -n "$SDKM" ]; then
+            (yes | "$SDKM" --licenses > /dev/null 2>&1) || true
+            "$SDKM" --install "platforms;android-36" "build-tools;35.0.0" 2>&1 | tail -n 5 | tee -a "$LOG" \
+              || echo "UYARI: sdkmanager kurulumu tamamlanamadı, Gradle eksikleri kendisi indirmeyi deneyecek" | tee -a "$LOG"
+          else
+            echo "UYARI: sdkmanager bulunamadı" | tee -a "$LOG"
+          fi
+
+      - name: İmzasız AAB derle
+        working-directory: android
+        run: |
+          set -o pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace bundleRelease 2>&1 | tee -a "$LOG"
+          ls -la app/build/outputs/bundle/release/ | tee -a "$LOG"
+
+      - name: builds dalına gönder
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/builds"
+          rm -rf "$OUT" && mkdir -p "$OUT"
+          cp android/app/build/outputs/bundle/release/app-release.aab "$OUT/metro-istanbul-unsigned.aab"
+          echo "$GITHUB_SHA" > "$OUT/commit.txt"
+          cd "$OUT"
+          git init -q
+          git checkout -q -b builds
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "İmzasız AAB: $GITHUB_SHA"
+          git push -f -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:builds
+
+      - name: Hata günlüğünü builds dalına yaz
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          D="$RUNNER_TEMP/fail"
+          rm -rf "$D" && mkdir -p "$D" && cd "$D"
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git init -q
+          if git fetch -q --depth 1 "$REMOTE" builds; then git checkout -q -B builds FETCH_HEAD; else git checkout -q -b builds; fi
+          if [ -f "$LOG" ]; then tail -c 400000 "$LOG" > build-log.txt; else echo "Günlük oluşmadı" > build-log.txt; fi
+          echo "$GITHUB_SHA" > failed-commit.txt
+          git add build-log.txt failed-commit.txt
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Derleme hatası: $GITHUB_SHA"
+          git push -q "$REMOTE" HEAD:builds

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Açılışta beyaz ekran görünmesin: pencere arka planı oyunun açılış ekranıyla aynı koyu renk.
+      Açık/koyu tema ayrımı önemli: WebView, oyundaki "Sistem" temasını (prefers-color-scheme)
+      uygulama temasının açık ya da koyu olmasına göre belirler. Koyu sürüm values-night içinde.
+    -->
+    <style name="Oyun" parent="android:Theme.Material.Light.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/acilis</item>
+    </style>
+</resources>

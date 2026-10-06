@@ -475,6 +475,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       </div>
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
+        <div class="set-row" id="rowAdPrivacy" hidden><div class="lbl"><b>Reklam gizlilik seçenekleri</b><span>Reklamlar için verdiğin izni değiştir</span></div><button class="chip" id="btnAdPrivacy">Aç</button></div>
       </div>
       <p class="credit">Metro İstanbul · sürüm 3.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
@@ -1734,7 +1735,10 @@ function fillVoices(){const sel=$('#setVoice');let vs=[];
   const fem=vs.some(v=>v.g>0);
   sel.innerHTML=`<option value="">Otomatik (en iyi kadın sesi)</option>`+vs.map(v=>`<option value="${esc(v.n)}">${esc(v.l)}</option>`).join('');sel.value=vs.some(v=>v.n===CFG.voice)?CFG.voice:'';
   $('#voiceHint').textContent=!vs.length?'Bu cihazda Türkçe ses yok, sadece gong çalar':fem?`${vs.length} Türkçe ses bulundu, kadın sesi otomatik seçilir`:'Kadın sesi bulunamadı. Telefon Ayarları > Metin okuma çıkışı > Google Konuşma Hizmetleri > Türkçe ses verilerini indir.'}
-function openSettings(){fillVoices();setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
+// Android uygulamasında (AB ve Birleşik Krallık gibi yerlerde) reklam izni ayarlardan yeniden açılabilmeli. Web sürümünde satır gizli kalır.
+function adPrivacyRow(){let on=false;try{on=!!(window.AndroidTTS&&AndroidTTS.privacyOptionsRequired&&AndroidTTS.privacyOptionsRequired())}catch(e){}$('#rowAdPrivacy').hidden=!on}
+$('#btnAdPrivacy').onclick=()=>{try{AndroidTTS.showPrivacyOptions()}catch(e){}};
+function openSettings(){fillVoices();adPrivacyRow();setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
 $('#btnSettings').onclick=openSettings;$('#btnSettings2').onclick=openSettings;
 $('#btnSettingsClose').onclick=()=>{$('#settingsModal').hidden=true;G.paused=setWasPaused;hud(true)};
 $('#setVoice').addEventListener('change',e=>{CFG.voice=e.target.value;saveCfg()});

@@ -1,0 +1,5 @@
+# Windows betiği CRLF, Unix betiği LF kalsın.
+*.bat text eol=crlf
+gradlew text eol=lf
+*.jar binary
+*.woff2 binary

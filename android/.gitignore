@@ -1,0 +1,15 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.cxx/
+captures/
+.kotlin/
+# İmza anahtarları ve parolalar asla depoya girmez.
+*.jks
+*.keystore
+*.p12
+*.pem
+keystore.properties
+signing.properties
