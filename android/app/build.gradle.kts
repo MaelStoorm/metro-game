@@ -103,8 +103,8 @@ android {
         applicationId = "io.github.maelstoorm.metroistanbul"
         minSdk = 24
         targetSdk = 36
-        versionCode = 40
-        versionName = "3.9"
+        versionCode = 41
+        versionName = "3.9.1"
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_REWARDED_ID", "\"$admobRewardedId\"")
     }
