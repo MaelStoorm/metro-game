@@ -491,7 +491,11 @@ public class MainActivity extends Activity {
     protected void onPause() {
         resumed = false;
         // Not: WebView.pauseTimers() bilerek çağrılmıyor; tüm WebView'leri (reklamınkini de) durdurur.
-        if (web != null) web.onPause();
+        // Oyunu duraklat ve sesleri sustur: WebView arka planda Web Audio'yu kendiliğinden durdurmuyor.
+        if (web != null) {
+            web.evaluateJavascript("window.__appHidden&&window.__appHidden(true)", null);
+            web.onPause();
+        }
         if (tts != null && ttsReady) tts.stop();
         ReminderReceiver.schedule(this);
         super.onPause();
@@ -501,7 +505,10 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         resumed = true;
-        if (web != null) web.onResume();
+        if (web != null) {
+            web.onResume();
+            web.evaluateJavascript("window.__appHidden&&window.__appHidden(false)", null);
+        }
         hideBars();
         ReminderReceiver.cancel(this);
         if (pendingAdResult != null) {

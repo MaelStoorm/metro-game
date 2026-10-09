@@ -366,7 +366,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="secondary" id="btnSettings2">Ayarlar</button>
         </div>
       </div>
-      <p class="credit"><b class="studio-name">MAELSTROM STUDIO</b> · © 2026 Egemen, tüm hakları saklıdır. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Raylı İstanbul ağ haritasından.</p>
+      <p class="credit"><b class="studio-name">MAELSTROM STUDIO</b> · © 2026 Egemen, tüm hakları saklıdır. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson. Hat listeleri Metro İstanbul ağ haritasından.</p>
     </div>
   </div>
 
@@ -477,7 +477,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
         <div class="set-row" id="rowAdPrivacy" hidden><div class="lbl"><b>Reklam gizlilik seçenekleri</b><span>Reklamlar için verdiğin izni değiştir</span></div><button class="chip" id="btnAdPrivacy">Aç</button></div>
       </div>
-      <p class="credit">Raylı İstanbul · sürüm 3.9 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Raylı İstanbul · sürüm 3.9.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -1797,7 +1797,17 @@ try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTok
 new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','class','style']});
 if(matchMedia('(max-width:640px)').matches)$('#legend').open=false;
 window.addEventListener('resize',resize);window.addEventListener('orientationchange',()=>setTimeout(resize,250));resize();
-document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame();if(document.hidden&&G&&!G.over&&!G.modal&&!G.paused){G.paused=true;hud(true)}});
+// Uygulama arka plana geçince (telefonun ana ekranı, başka uygulama, ekran kilidi) oyun duraklar ve bütün sesler susar.
+// Motor uğultusu sesleri her karede ayarlanır; arka planda kare çizilmediği için son ses düzeyinde takılı kalıyordu.
+// Android uygulaması da onPause/onResume'da bu işlevi çağırır (visibilitychange her telefonda güvenilir gelmiyor).
+function appHidden(h){
+  if(h){saveGame();if(G&&!G.over&&!G.modal&&!G.paused){G.paused=true;hud(true)}
+    if(SND.c){const t=SND.c.currentTime;if(SND.hum)for(const g of [SND.hum.d,SND.hum.e,SND.hum.r])if(g){g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(0,t)}
+      try{SND.c.suspend()}catch(e){}}
+    try{speechSynthesis.cancel()}catch(e){}try{window.AndroidTTS&&AndroidTTS.stop()}catch(e){}}
+  else if(SND.c&&SND.c.state!=='running'){try{SND.c.resume()}catch(e){}}}
+window.__appHidden=appHidden;
+document.addEventListener('visibilitychange',()=>appHidden(document.hidden));
 setSound(SND.on);applyTheme();$('#btnReal').setAttribute('aria-pressed',String(showReal));
 newGame();hud(true);renderDaily();renderAchCount();setTimeout(checkAch,500);
 // Açılış animasyonu: dokununca geçer, yoksa ~3,4 sn sonra kaybolur
