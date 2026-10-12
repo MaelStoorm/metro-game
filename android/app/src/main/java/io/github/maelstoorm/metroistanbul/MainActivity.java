@@ -25,6 +25,7 @@ import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
+import android.webkit.ValueCallback;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -67,6 +68,9 @@ public class MainActivity extends Activity {
     private RewardedAds ads;
     private boolean resumed;
     private String pendingAdResult;
+    private volatile Billing billing;
+    /** Oyun duraklatılmışken (ör. Google Play satın alma ekranı açıkken) gelen ödeme sonuçları; dönüşte iletilir. */
+    private final List<Runnable> pendingBillingJs = new ArrayList<>();
 
     /** Oyunun JavaScript tarafından window.AndroidTTS adıyla çağrılır. Yöntem adları oyunla aynı kalmalı. */
     public class Bridge {
@@ -137,6 +141,44 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean privacyOptionsRequired() {
             return ads != null && ads.privacyOptionsRequired();
+        }
+
+        // ---------- uygulama içi satın alma (Google Play) ----------
+        // Sonuçlar window.__billing.products / purchased / owned ile oyuna döner.
+
+        @JavascriptInterface
+        public boolean billingReady() {
+            return billing != null && billing.isReady();
+        }
+
+        @JavascriptInterface
+        public void billingProducts(final String idsJson) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (billing != null) billing.products(idsJson);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void billingBuy(final String id) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (billing != null) billing.buy(id);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void billingRestore() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (billing != null) billing.restore();
+                }
+            });
         }
 
         @JavascriptInterface
@@ -231,6 +273,11 @@ public class MainActivity extends Activity {
             public void onAdResult(String status) { sendAdResult(status); }
         });
 
+        billing = new Billing(this, new Billing.Js() {
+            @Override
+            public void eval(String script, Billing.Done done) { billingJs(script, done); }
+        });
+
         if (state == null || web.restoreState(state) == null) web.loadUrl(GAME_URL);
 
         // Önce reklam izni (gerekiyorsa Google'ın izin penceresi), ardından bildirim izni sorulur; iki pencere üst üste binmesin.
@@ -321,6 +368,29 @@ public class MainActivity extends Activity {
         // Oyuncu reklamı erken kapattıysa ödül yok.
         boolean ok = !"dismissed".equals(status);
         web.evaluateJavascript("window.__adDone&&window.__adDone(" + ok + ")", null);
+    }
+
+    // ---------- uygulama içi satın alma ----------
+
+    /** Ödeme sonucunu oyuna iletir; oyun duraklatılmışsa dönüşte (onResume) iletilir. */
+    private void billingJs(final String script, final Billing.Done done) {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) {
+                    if (done != null) done.onResult(false);
+                    return;
+                }
+                web.evaluateJavascript(script, new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String value) {
+                        if (done != null) done.onResult("true".equals(value));
+                    }
+                });
+            }
+        };
+        if (resumed) r.run();
+        else pendingBillingJs.add(r);
     }
 
     // ---------- bildirim izni ----------
@@ -516,11 +586,23 @@ public class MainActivity extends Activity {
             pendingAdResult = null;
             runAdResult(status);
         }
+        if (!pendingBillingJs.isEmpty()) {
+            List<Runnable> list = new ArrayList<>(pendingBillingJs);
+            pendingBillingJs.clear();
+            for (Runnable r : list) r.run();
+        }
+        // Uygulama dışında tamamlanan (ör. bekleyen ödeme) ya da yarım kalan satın almalar.
+        if (billing != null) billing.restore();
     }
 
     @Override
     protected void onDestroy() {
         if (ads != null) ads.destroy();
+        if (billing != null) {
+            billing.destroy();
+            billing = null;
+        }
+        pendingBillingJs.clear();
         if (tts != null) {
             try {
                 tts.shutdown();

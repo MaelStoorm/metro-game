@@ -66,6 +66,11 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--ink);outline-
 .meter{height:6px;border-radius:3px;background:var(--rule);overflow:hidden;width:170px;max-width:100%}
 .meter i{display:block;height:100%;width:0;background:var(--ink);border-radius:3px;transition:width .3s}
 #mission{font-size:12px;margin-top:3px;color:var(--ink);font-weight:600}#mission.ok{color:#1F8A4C}
+#econ{font-size:12px;margin-top:2px;color:var(--ink-2);font-weight:600;font-variant-numeric:tabular-nums}#econ.bad{color:var(--warn)}
+.days7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:12px 0}.days7 div{border:1px solid var(--rule);border-radius:10px;padding:6px 2px;background:var(--land);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--ink-2)}.days7 b{font-size:17px;color:var(--gold)}.days7 i{font-style:normal;font-weight:700;color:var(--ink);font-size:11.5px}.days7 .got{opacity:.45}.days7 .now{border:2px solid var(--gold);background:var(--paper)}
+.iap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--rule)}.iap:first-of-type{margin-top:8px}.iap div{display:flex;flex-direction:column;gap:2px}.iap b{color:var(--ink);font-size:14.5px}.iap span{font-size:12.5px}.iap .chip{white-space:nowrap;min-width:84px}.iap .buy{background:var(--gold);color:#1a1300;border-color:transparent;font-weight:700}
+.lbtn.build{opacity:.75;border-style:dashed}
+.daily.live{border-color:var(--gold)}
 #clock{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .controls{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .seg{display:flex;background:var(--panel);border:1px solid var(--rule);border-radius:999px;padding:3px;gap:2px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -215,6 +220,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       </div>
       <div id="clock">1. hafta · Pazartesi</div>
       <div id="mission" hidden></div>
+      <div id="econ" hidden></div>
     </div>
     <div class="controls" id="controls">
       <div class="seg" role="group" aria-label="Hız">
@@ -332,6 +338,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <h1>Raylı İstanbul</h1>
       <p class="lede">İstanbul'un raylı sistem hatları (M2 Sefaköy, M7 Esenyurt ve M12 dahil), metrobüsü ve 39 ilçesi gerçek haritasıyla burada. Oyna'da M2 ile başla, puan topladıkça yeni hatlar açılsın. Bölümler'de her hattı tek tek oyna.</p>
       <div class="daily" id="dailyBox"></div>
+      <div class="daily live" id="liveBox" hidden></div>
       <details>
         <summary>Nasıl oynanır</summary>
         <ul>
@@ -347,6 +354,9 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <li>Günün haritası her gün başka bir hat ve başka bir kuralla başlar.</li>
           <li>Duraklatınca 📷 Fotoğraf ile kurduğun ağın resmini kaydedebilirsin.</li>
           <li>Bir hattı seçince o hattın ilk aracında gong ve durak anonsu duyarsın.</li>
+          <li>Yolcu memnuniyeti duraklar kalabalıklaştıkça düşer. Yüksek memnuniyet puanı 1,25 katına çıkarır, düşük memnuniyet azaltır.</li>
+          <li>Bazı hatlar (M12, M7) gerçekte olduğu gibi önce inşaatta bekler. Açılınca çevresinde yolcu artar.</li>
+          <li>Bütçe modunda hat ve araç para tutar, her yolcu bilet parası getirir. Kasa 3 gün eksi kalırsa iflas edersin.</li>
         </ul>
       </details>
       <div class="stack">
@@ -360,6 +370,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="secondary" id="side_europe">Avrupa Yakası</button>
         </div>
         <button class="secondary" id="btnDmap">📅 Günün haritası</button>
+        <button class="secondary" id="btnBudget">💰 Bütçe modu</button>
         <button class="secondary" id="btnAch">🏆 Skorlar ve başarımlar · <span id="achCount">0</span></button>
         <div class="row2">
           <button class="secondary" id="btnShop2">Mağaza · <span class="coin">₺</span><span id="coinIntro">0</span></button>
@@ -460,6 +471,8 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <div class="opts" data-opt="diff"><button data-v="kolay">Kolay</button><button data-v="normal">Normal</button><button data-v="zor">Zor</button></div></div>
         <div class="set-row"><div class="lbl"><b>Başlangıç hızı</b><span>Oyun bu hızla açılır</span></div>
           <div class="opts" data-opt="speed"><button data-v="0.5">Yavaş</button><button data-v="1">1×</button><button data-v="2">2×</button></div></div>
+        <div class="set-row"><div class="lbl"><b>Dil / Language</b><span>Durak adları ve anonslar Türkçe kalır</span></div>
+          <div class="opts" data-opt="lang"><button data-v="tr">Türkçe</button><button data-v="en">English</button></div></div>
       </div>
       <div class="set-group"><h3>Harita</h3>
         <div class="set-row"><div class="lbl"><b>Tema</b></div>
@@ -476,8 +489,9 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
         <div class="set-row" id="rowAdPrivacy" hidden><div class="lbl"><b>Reklam gizlilik seçenekleri</b><span>Reklamlar için verdiğin izni değiştir</span></div><button class="chip" id="btnAdPrivacy">Aç</button></div>
+        <div class="set-row" id="rowRestore" hidden><div class="lbl"><b>Satın alımları geri yükle</b><span>Reklamsız + destekçi paketini bu cihazda yeniden aç</span></div><button class="chip" id="btnRestore">Geri yükle</button></div>
       </div>
-      <p class="credit">Raylı İstanbul · sürüm 3.9.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Raylı İstanbul · sürüm 4.0 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -490,8 +504,18 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="skins" id="busList"></div>
       <h3 class="shop-sec">Bütün araçlar için görünüm</h3>
       <div class="skins" id="skinList"></div>
-      <div class="premium"><strong>Gerçek parayla paketler.</strong> Uygulama App Store ve Google Play'e çıktığında jeton paketleri oradan satın alınabilecek. Bu web sürümünde ödeme alınmıyor.</div>
+      <div class="premium" id="iapBox"></div>
       <button class="primary" id="btnShopClose">Kapat</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="loginModal" hidden>
+    <div class="card" style="text-align:center">
+      <span class="eyebrow">Günlük giriş ödülü</span>
+      <h2 id="loginTitle">1. gün</h2>
+      <div class="days7" id="loginDays"></div>
+      <p class="muted" id="loginText"></p>
+      <button class="primary" id="btnLoginClaim">Ödülü al</button>
     </div>
   </div>
 </div>
@@ -541,6 +565,12 @@ const SKINS = [
   {id:'lale',name:'Lale',desc:'Lale moru gövde, pembe şerit.',price:400},
   {id:'vapur',name:'Vapur boyası',desc:'Beyaz gövde, sarı-siyah baca şeridi.',price:450},
   {id:'altin',name:'Altın seri',desc:'Parıldayan altın gövde. Koleksiyonun en pahalısı.',price:1000},
+  // Satılmayan, kazanılan görünümler
+  {id:'seri',name:'Seri ateşi',desc:'7 gün üst üste günlük ödülü alınca gelir. Turuncu gövde, sarı alev şeridi.',price:0,hidden:true,how:'7 gün üst üste gel'},
+  {id:'destek',name:'Destekçi',desc:'Reklamsız + destekçi paketiyle gelir. Lacivert gövde, altın şerit.',price:0,hidden:true,how:'Destekçi paketiyle'},
+  {id:'bayrak',name:'Al bayrak',desc:'Cumhuriyet Bayramı etkinliğinin ödülü. Kırmızı gövde, beyaz şerit.',price:0,hidden:true,how:'Cumhuriyet Bayramı etkinliği'},
+  {id:'yilbasi',name:'Yılbaşı',desc:'Yılbaşı etkinliğinin ödülü. Çam yeşili gövde, kırmızı şerit.',price:0,hidden:true,how:'Yılbaşı etkinliği'},
+  {id:'ramazan',name:'Ramazan fenerleri',desc:'Ramazan etkinliğinin ödülü. Gece mavisi gövde, fener sarısı ışık.',price:0,hidden:true,how:'Ramazan etkinliği'},
 ];
 const BUSES = [
   {id:'std',name:'Standart metrobüs',desc:'İstanbul\'daki gibi gri, körüklü otobüs.',price:0},
@@ -598,7 +628,7 @@ const proj=(lat,lon)=>({x:(lon-29.0)*84.0,y:-(lat-41.0)*111.2});
 // ---------- Kalıcı kayıt ----------
 function load(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-const CFG = Object.assign({voice:'',english:true,vol:70,vehicle:true,announce:true,vibrate:true,diff:'normal',speed:'1',theme:'system',labels:'auto',real:true,districts:true,gfx:'denge',remind:true,night:true,hold:true},load('mi-cfg',{}));
+const CFG = Object.assign({lang:/^tr/i.test(navigator.language||'tr')?'tr':'en',voice:'',english:true,vol:70,vehicle:true,announce:true,vibrate:true,diff:'normal',speed:'1',theme:'system',labels:'auto',real:true,districts:true,gfx:'denge',remind:true,night:true,hold:true},load('mi-cfg',{}));
 const saveCfg=()=>save('mi-cfg',CFG);
 const dif=()=>DIFF[CFG.diff]||DIFF.normal;
 function vib(p){if(!CFG.vibrate)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
@@ -611,12 +641,12 @@ function persist(){save('mi-coins',P.coins);save('mi-owned',P.owned);save('mi-sk
 function recordScore(){if(G.chap||G.region||G.daily||G.score<=0)return -1;
   // Reklamla devam edilen oyun aynı satırı günceller
   P.board=P.board.filter(x=>x.id!==G.recId);G.recId=G.recId||Date.now();
-  const d=new Date(),e={s:G.score,l:G.level,w:G.week,df:CFG.diff,d:d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),id:G.recId};
+  const d=new Date(),e={s:G.score,l:G.level,w:G.week,df:CFG.diff,b:G.budget?1:0,d:d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}),id:G.recId};
   P.board.push(e);P.board.sort((a,b)=>b.s-a.s);P.board=P.board.slice(0,10);lastBoard=e.id;return P.board.findIndex(x=>x.id===e.id)}
 let lastBoard=0;
 function renderBoard(){const B=P.board,DF={kolay:'kolay',normal:'normal',zor:'zor'};
   const cr=CHAPS.map(id=>P.chap[id]||{stars:0}),stars=cr.reduce((a,r)=>a+(r.stars||0),0),done=cr.filter(r=>r.stars>0).length;
-  $('#boardBox').innerHTML=`<h3>En iyi oyunların</h3>${B.length?`<ol>${B.map(e=>`<li class="${e.id===lastBoard?'new':''}"><span><b>${e.s}</b> puan · seviye ${e.l} · ${e.w}. hafta</span><span>${esc(e.d)}${e.df!=='normal'?' · '+esc(DF[e.df]||e.df):''}</span></li>`).join('')}</ol>`:'<p class="muted" style="margin:0">Henüz bitmiş oyun yok. Oyna modunda ilk oyununu bitir, skorun burada görünsün.</p>'}
+  $('#boardBox').innerHTML=`<h3>En iyi oyunların</h3>${B.length?`<ol>${B.map(e=>`<li class="${e.id===lastBoard?'new':''}"><span><b>${e.s}</b> puan · seviye ${e.l} · ${e.w}. hafta</span><span>${esc(e.d)}${e.df!=='normal'?' · '+esc(DF[e.df]||e.df):''}${e.b?' · bütçe':''}</span></li>`).join('')}</ol>`:'<p class="muted" style="margin:0">Henüz bitmiş oyun yok. Oyna modunda ilk oyununu bitir, skorun burada görünsün.</p>'}
   <h3 style="margin-top:14px">İstatistikler</h3><div class="statg">${[['Taşınan yolcu',ST.del],['Su üzerinden',ST.cross],['Marmaray',ST.mr],['Metrobüs',ST.brt],['Atlatılan olay',ST.ev||0],['Biten oyun',ST.games||0],['En uzun oyun',(ST.maxWeek||0)+'. hafta'],['Tek hat rekoru',ST.lineRec||0],['Günün haritası',(DMAP.tries||0)+' kez'],['Fotoğraf',ST.photo||0],['Haftalık görev',ST.mis||0]].map(([k,v])=>`<div><b>${typeof v==='number'?v.toLocaleString('tr-TR'):esc(v)}</b><span>${k}</span></div>`).join('')}</div>
   <div class="stars"><span>Bölüm yıldızları</span><b>${'★'} ${stars}/${CHAPS.length*3} · ${done}/${CHAPS.length} bölüm</b></div>`}
 
@@ -655,7 +685,7 @@ function newGame(chap,region,dm){
   G={chap:chap||null,region:region||null,daily:dm?dm.d:null,dmod:dm?dm.mod:null,levels:region?sideLevels(region):dm?[[dm.line],...LEVELS.map(l=>l.filter(id=>id!==dm.line)).filter(l=>l.length)]:LEVELS,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
      st:NODES.map(n=>({...n,queue:[],crowd:0,revealed:false,inPool:false,rt:-99,spawn:0})),
      lines:LINE_ORDER.map(id=>({...LINEDEF[id],st:[],trains:[],unlocked:false,rides:0})),
-     pool:{train:dif().train,car:0,gecit:dif().gecit}};G.speed=+CFG.speed||1;
+     pool:{train:dif().train,car:0,gecit:dif().gecit},sat:80,build:{}};G.speed=+CFG.speed||1;
   if(chap){G.level=G.levels.length;const q=chapSeq(chap),n=q.length,m=n>>1;chapLines(chap).forEach((ln,k)=>{const L=lineById(ln);L.unlocked=true;for(const i of chapSeqs(chap)[k])G.st[i].inPool=true})
     const c=chap==='34'?Math.max(1,q.findIndex(i=>/15 Temmuz/.test(G.st[i].name))):m,pick=n<=4?q:[q[c-1],q[c],q[Math.min(n-1,c+1)]];for(const i of pick)reveal(G.st[i]);G.nextReveal=9}
   else if(region){unlock(G.levels[0]);const q=sideSeq(G.levels[0][0],region).filter(i=>sideOf(i)===region),m=q.length>>1;
@@ -724,6 +754,7 @@ function network(){
     for(let h=0;h<q.length;h++){const u=q[h];for(const v of adj[u])if(d[v]===Infinity){d[v]=d[u]+1;q.push(v)}}
     dist[ty]=d}
   for(const L of G.lines)L.districts=null;
+  if(G.budget)infraCharge();
 }
 const dd=(ty,i)=>dist[ty]?dist[ty][i]:Infinity;
 function lineDistricts(L){
@@ -733,7 +764,9 @@ function lineDistricts(L){
   return L.districts=[...set]}
 
 // ---------- Araçlar ----------
-function addScore(n){G.score+=n;G.coinFrac+=n;while(G.coinFrac>=5){G.coinFrac-=5;G.earned++;P.coins++}
+function addScore(n){if(G.budget){const f=n*FARE;G.money+=f;G.dayInc=(G.dayInc||0)+f}
+  if(satOn()){G.satFrac=(G.satFrac||0)+n*satMul();n=Math.floor(G.satFrac);G.satFrac-=n}
+  G.score+=n;G.coinFrac+=n*liveMul();liveGoal();while(G.coinFrac>=5){G.coinFrac-=5;G.earned++;P.coins++}
   if(G.chap)chapProgress();
   else if(G.level<G.levels.length&&G.score>=needFor(G.level))levelUp()}
 function chapProgress(){const id=G.chap,st=chapStars(id,G.score);if(st<=G.chapStar)return;
@@ -792,6 +825,10 @@ const ACH=[
   {id:'foto',ic:'📷',name:'Hatıra fotoğrafı',desc:'Kurduğun ağın fotoğrafını kaydet.',c:10,ok:()=>(ST.photo||0)>=1},
   {id:'gorev5',ic:'🎯',name:'Görev adamı',desc:'5 haftalık görev tamamla.',c:20,ok:()=>(ST.mis||0)>=5,p:()=>[ST.mis||0,5]},
   {id:'gunluk7',ic:'🔥',name:'Her gün yolda',desc:'Günlük görevi 7 gün üst üste tamamla.',c:30,ok:()=>DAILY.streak>=7,p:()=>[DAILY.streak,7]},
+  {id:'giris7',ic:'🎁',name:'Sadık yolcu',desc:'Günlük giriş ödülünü 7 gün üst üste al.',c:20,ok:()=>LOGIN.streak>=7,p:()=>[LOGIN.streak,7]},
+  {id:'insaat',ic:'🏗',name:'Temel atma',desc:'İnşaattaki bir hattı hizmete aç.',c:10,ok:()=>(ST.build||0)>=1},
+  {id:'memnun',ic:'😊',name:'Mutlu şehir',desc:'5. haftada yolcu memnuniyeti %90 ya da üstünde olsun.',c:20,ok:()=>G&&!G.chap&&G.week>=5&&(G.sat||0)>=90},
+  {id:'butce',ic:'💰',name:'Kârlı işletme',desc:'Bütçe modunda kasa artıdayken 5. haftaya ulaş.',c:25,ok:()=>G&&G.budget&&G.week>=5&&G.money>0},
 ];
 let noteQ=[];function note(m){noteQ.push(m);if(noteQ.length===1)setTimeout(()=>{toast(noteQ.join('  ·  '));noteQ=[]},60)}
 function checkAch(){let any=false;
@@ -875,21 +912,23 @@ function arrive(tr){
 }
 function addTrain(L){
   if(G.pool.train<=0||L.st.length<2)return false;
+  if(!spend(COST.train,'yeni araç'))return false;
   G.pool.train--;setTimeout(checkAch,0);const tr={line:L,i:L.trains.length%2?L.st.length-1:0,dir:1,t:0,dwell:0,pax:[],cars:0};
   L.trains.push(tr);arrive(tr);return true}
 function removeTrain(L){
   if(L.trains.length<=1){return false}
   const tr=L.trains[L.trains.length-1],S=L.st[Math.max(0,Math.min(L.st.length-1,tr.i+(tr.dwell>0?0:tr.dir)))];
   for(const p of tr.pax){if(p===S.type)addScore(1);else S.queue.push(p)}
-  G.pool.train++;G.pool.car+=tr.cars;L.trains.pop();return true}
+  G.pool.train++;G.pool.car+=tr.cars;if(G.budget)G.money+=(COST.train+tr.cars*COST.car)/2;L.trains.pop();return true}
 function addCar(L){
   if(G.pool.car<=0||!L.trains.length)return false;
   const tr=L.trains.reduce((a,b)=>b.cars<a.cars?b:a);if(tr.cars>=3){toast('Bu hattın araçları en fazla 3 vagon taşıyabilir.');return false}
+  if(!spend(COST.car,'vagon'))return false;
   G.pool.car--;tr.cars++;return true}
 function removeLine(L){
   for(const tr of L.trains){const S=L.st[Math.max(0,Math.min(L.st.length-1,tr.i+(tr.dwell>0?0:tr.dir)))];
     for(const p of tr.pax){if(p===S.type)addScore(1);else S.queue.push(p)}
-    G.pool.train++;G.pool.car+=tr.cars}
+    G.pool.train++;G.pool.car+=tr.cars;if(G.budget)G.money+=(COST.train+tr.cars*COST.car)/2}
   L.trains=[];L.st=[];L.rides=0;if(G.undo)G.undo=G.undo.filter(u=>u.L!==L);network()}
 function removeEnd(L,end){
   if(end==='tail'){L.st.pop();network();const n=L.st.length;
@@ -904,10 +943,10 @@ function weightedType(exclude){
   let r=Math.random()*pres.reduce((a,t)=>a+TYPES[t].w,0);
   for(const t of pres){r-=TYPES[t].w;if(r<=0)return t}return pres[0]}
 function step(dt){
-  G.t+=dt;evTick();nightTick();
+  G.t+=dt;evTick();nightTick();econTick(dt);if(G.over)return;
   G.nextReveal-=dt;
   if(G.nextReveal<=0){pickReveal();const n=G.st.filter(s=>s.revealed).length;G.nextReveal=Math.min(13,6.5+n*0.08)}
-  const mean=Math.max(G.chap?5:7,16-G.t/(G.chap?30:50))*dif().spawn*(G.spawnMul||1)/rushOf(hourOf(G.t)),OVER_T=dif().over;
+  const mean=Math.max(G.chap?5:7,16-G.t/(G.chap?30:50))*dif().spawn*(G.spawnMul||1)/rushOf(hourOf(G.t))/liveRush(hourOf(G.t)),OVER_T=dif().over;
   for(const s of G.st){if(!s.revealed)continue;
     s.spawn-=dt;if(s.spawn<=0){const ty=weightedType(s.type);if(ty!=null)s.queue.push(ty);s.spawn=(-Math.log(1-Math.random()*.95)*mean+1)/evMul(s)}
     if(s.queue.length>QMAX)s.crowd+=dt/OVER_T;else s.crowd=Math.max(0,s.crowd-dt/(OVER_T*1.5));
@@ -927,14 +966,15 @@ function step(dt){
   if(G.t>=G.week*WEEK){G.week++;G.pool.train++;openWeek();dailyAdd('week',G.week);checkAch()}
 }
 function levelUp(){
-  const ids=G.levels[G.level];G.level++;unlock(ids);
+  const ids=G.levels[G.level];G.level++;const later=unlockOrBuild(ids);
   const cands=G.st.filter(s=>s.inPool&&!s.revealed&&s.lines.some(l=>ids.includes(l)));
   for(const s of nearestToRevealed(cands,2))reveal(s);
   network();G.pool.train++;P.coins+=10;G.earned+=10;persist();
   $('#lvlEyebrow').textContent=`Seviye ${G.level}`;
   $('#lvlTitle').textContent=G.region&&G.level===G.levels.length?`${SIDES[G.region].name}nın bütün hatları açıldı!`:ids.length>1?'Yeni hatlar açıldı':'Yeni hat açıldı';
   if(G.region&&G.level===G.levels.length){P.side=P.side||{};P.side[G.region]=Object.assign(P.side[G.region]||{},{done:true});persist();note(`🏁 ${SIDES[G.region].name} tamamlandı`)}
-  $('#lvlUnlock').innerHTML=ids.map(id=>{const L=LINEDEF[id];return `<span class="tag"><i style="--c:${L.color}">${LABEL(id)}</i>${esc(L.name)} · ${MODES[L.mode].label}</span>`}).join('');
+  $('#lvlUnlock').innerHTML=ids.map(id=>{const L=LINEDEF[id];return `<span class="tag"><i style="--c:${L.color}">${LABEL(id)}</i>${esc(L.name)} · ${MODES[L.mode].label}</span>`}).join('')
+    +later.map(id=>`<p class="muted" style="margin:8px 0 0">🏗 ${LABEL(id)} (${esc(BUILDS[id])}) inşaatta: ${buildDays(id)} gün sonra hizmete açılır. Alttaki 🏗 düğmesinden jetonla hızlandırabilirsin.</p>`).join('');
   G.modal=true;$('#levelModal').hidden=false;vib(60);
 }
 // ---------- Olaylar: derbi, bayram, kar, arıza. Yeni günün başında bazen biri başlar, atlatınca jeton verir ----------
@@ -951,23 +991,25 @@ const EVENTS=[
   {k:'yagmur',ic:'🌧',name:'Sağanak yağmur',all:1.3,speed:.9,dur:.5,msg:()=>'Sağanak yağmur: herkes raylı sistemi seçti, bütün duraklar daha kalabalık.'},
   {k:'maraton',ic:'🏃',name:'İstanbul Maratonu',season:2,dur:.45,msg:()=>'İstanbul Maratonu: köprü koşuculara kapalı, metrobüs yavaş ilerliyor.'},
   {k:'yilbasi',ic:'🎆',name:'Yılbaşı gecesi',season:3,st:['Taksim','Kadıköy','Şişhane','Osmanbey','Sultanahmet'],mult:3,dur:.5,msg:n=>`Yılbaşı gecesi! ${n} çevresinde kutlama kalabalığı.`},
-  {k:'okul',ic:'🎒',name:'Okullar açıldı',season:2,all:1.15,dur:1,msg:()=>'Okullar açıldı: sabah ve akşam bütün hatlar daha yoğun.'}];
+  {k:'okul',ic:'🎒',name:'Okullar açıldı',season:2,all:1.15,dur:1,msg:()=>'Okullar açıldı: sabah ve akşam bütün hatlar daha yoğun.'},
+  {k:'cumhuriyet',ic:'🇹🇷',name:'29 Ekim kutlaması',only:1,st:['Taksim','Kadıköy','Yenikapı','Sultanahmet','Şişhane'],mult:2.8,dur:.6,msg:n=>`Cumhuriyet Bayramı kutlu olsun! ${n} çevresinde fener alayı kalabalığı.`}];
 const EVST={};for(const e of EVENTS)if(e.st)EVST[e.k]=e.st.map(n=>NODES.findIndex(x=>x.name===n)).filter(i=>i>=0);
 const evDef=()=>G.ev&&EVENTS.find(e=>e.k===G.ev.k);
 function evTick(){const day=dayOf(G.t);
   if(G.ev&&G.t>=G.ev.until){const e=evDef();G.ev=null;P.coins+=10;G.earned+=10;ST.ev=(ST.ev||0)+1;save('mi-stat',ST);persist();note(`${e.ic} ${e.name} bitti, atlattın · +10 jeton`);dailyAdd('ev',1);checkAch()}
-  if(day===G.evDay)return;G.evDay=day;if(G.ev||G.t<DAY*.8||Math.random()>.3)return;
+  if(day===G.evDay)return;G.evDay=day;if(G.ev||G.t<DAY*.8||Math.random()>(liveNow()&&liveNow().ev?.5:.3))return;
   const opts=[];
-  for(const e of EVENTS){if(e.season!=null&&e.season!==seasonIdx())continue;
+  for(const e of EVENTS){if((e.season!=null&&e.season!==seasonIdx()&&!liveForces(e.k))||(e.only&&!liveForces(e.k)))continue;
     if(e.k==='maraton'){const b=lineById('34');if(b&&b.trains.length)opts.push({e});continue}
     if(e.st){const c=EVST[e.k].filter(i=>G.st[i].revealed);if(c.length)opts.push({e,st:c.sort(()=>Math.random()-.5).slice(0,2)})}
     else if(e.k==='ariza'){const ls=G.lines.filter(L=>L.st.length>1&&L.trains.length);if(ls.length>1)opts.push({e,line:ls[Math.floor(Math.random()*ls.length)].id})}
     else if(e.k==='kar'){if(seasonIdx()===3&&day-(G.lastKar??-9)>=2)opts.push({e},{e})}
     else opts.push({e})}
+  for(const o of [...opts])if(liveForces(o.e.k))opts.push(o,o,o);
   if(!opts.length)return;const o=opts[Math.floor(Math.random()*opts.length)];if(o.e.k==='kar')G.lastKar=day;
   G.ev={k:o.e.k,until:G.t+o.e.dur*DAY,st:o.st||[],line:o.line||null};
   toast(`${o.e.ic} ${o.e.msg(o.st?o.st.map(i=>G.st[i].name).join(' ve '):o.line?LABEL(o.line):'')}`);vib([40,60,40])}
-const evMul=s=>{if(!G.ev)return 1;const e=evDef();return e.all?e.all:G.ev.st.includes(s.i)?e.mult:1};
+const evMul=s=>{const b=G.boost&&G.boost.st.includes(s.i)?1.6:1;if(!G.ev)return b;const e=evDef();return b*(e.all?e.all:G.ev.st.includes(s.i)?e.mult:1)};
 const evSpeed=L=>!G.ev?1:G.ev.k==='kar'?.65:G.ev.k==='ariza'&&G.ev.line===L.id?0:G.ev.k==='maraton'&&L.mode==='brt'?.4:evDef().speed||1;
 // Taşma: önce uyarı, sonra oyun başına bir kez "ek sefer" hakkı; bitişte kamera durağa gider
 function warnCrowd(s){toast(`⚠ ${s.name} dolmak üzere! Bu durağa araç ya da hat ekle.`);vib([60,60,60])}
@@ -980,15 +1022,15 @@ function endWith(s){G.over=true;G.overSt=s;focusOn(s);clearSave();setTimeout(()=
 function gameOver(s){
   ST.games=(ST.games||0)+1;ST.maxWeek=Math.max(ST.maxWeek||0,G.week);ST.lineRec=Math.max(ST.lineRec||0,...G.lines.map(L=>L.rides||0));save('mi-stat',ST);clearSave();G.over=true;G.overSt=s;if(G.region){P.side=P.side||{};const r=P.side[G.region]||{};r.best=Math.max(r.best||0,G.score);P.side[G.region]=r}let dBest=false;if(G.daily){dmapRoll();if(G.daily===DMAP.d&&G.score>DMAP.best){dBest=DMAP.best>0;DMAP.best=G.score;save('mi-dmap',DMAP)}}
   const wasBest=G.score>P.best&&!G.chap&&!G.region&&!G.daily;if(!G.daily)P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
-  $('#overTitle').textContent=s.name+' taştı';$('#overScore').textContent=G.score;
+  $('#overTitle').textContent=G.bankrupt?'Kasa boşaldı, iflas!':s.name+' taştı';$('#overScore').textContent=G.score;
   $('#overText').textContent=G.daily?`puan topladın. Günün haritasında bugünkü en iyin ${DMAP.best}${dBest?', yeni günlük rekor! 🎉':''}. Yarın yeni bir harita ve yeni bir kural gelir. ${G.earned} jeton kazandın.`:G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${chapLabel(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
-  $('#btnAdCont').hidden=!!G.adUsed;$('#overModal').hidden=false;
+  $('#btnAdCont').hidden=!!G.adUsed;$('#btnAdCont').textContent=P.adfree?'▶ Kaldığın yerden devam et':'▶ Reklam izle, kaldığın yerden devam et';$('#overModal').hidden=false;
   vib([80,60,160]);
 }
 // ---------- Kayıt: oyun her birkaç saniyede ve uygulamadan çıkarken kaydedilir; açılışta "Devam et" ile sürer ----------
 function clearSave(){try{localStorage.removeItem('mi-save')}catch(e){}}
 function saveGame(){if(!G||G.over||G.t<3)return;
-  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId','lastKar','region','night','nightTold','wasClosed','daily','dmod','spawnMul','nightDel','levels','mornTold','nightBonus','mis'])g[k]=G[k];
+  const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId','lastKar','region','night','nightTold','wasClosed','daily','dmod','spawnMul','nightDel','levels','mornTold','nightBonus','mis','sat','satFrac','build','boost','budget','money','infraPaid','dayInc','debtDays','payDay','lastDay'])g[k]=G[k];
   save('mi-save',{v:1,g,st:G.st.filter(s=>s.inPool||s.revealed).map(s=>[s.i,s.revealed?1:0,s.queue,+s.crowd.toFixed(3),+s.spawn.toFixed(2)]),
     lines:G.lines.map(L=>[L.id,L.unlocked?1:0,L.st.map(s=>s.i),L.trains.map(t=>[t.i,t.dir,+t.t.toFixed(3),+t.dwell.toFixed(2),t.pax,t.cars]),L.rides||0])})}
 function loadGame(d){newGame(d.g.chap,d.g.region,d.g.daily?Object.assign(dmapToday(),{d:d.g.daily,mod:DMODS.find(m=>m.k===(d.g.dmod||{}).k)||DMODS[0]}):null);Object.assign(G,d.g,{paused:true,modal:false,over:false});
@@ -1062,7 +1104,7 @@ function ringPath(r){ctx.moveTo(sx(r[0]),sy(r[1]));for(let i=2;i<r.length;i+=2)c
 // Görünüm saklanan alanın dışına çıkınca ya da ölçek %15'ten fazla değişince yeniden çizilir.
 let MC=null;
 function drawMap(){
-  const M=1.5,key=[W,H,DPR,G.sel,G.sel&&lineById(G.sel)?lineById(G.sel).st.length:0,CFG.districts,C.land,C.water].join('|');
+  const M=1.5,key=[CFG.lang,W,H,DPR,G.sel,G.sel&&lineById(G.sel)?lineById(G.sel).st.length:0,CFG.districts,C.land,C.water].join('|');
   const ok=MC&&MC.key===key&&V.s/MC.s<1.15&&V.s/MC.s>.87&&Math.abs(V.cx-MC.cx)+W/2/V.s<=W*M/2/MC.s&&Math.abs(V.cy-MC.cy)+H/2/V.s<=H*M/2/MC.s;
   if(!ok){const k=Math.min(DPR,2);if(!MC)MC={cv:document.createElement('canvas')};const sv={W,H,ctx};
     MC.cv.width=Math.round(W*M*k);MC.cv.height=Math.round(H*M*k);W=W*M;H=H*M;ctx=MC.cv.getContext('2d');ctx.setTransform(k,0,0,k,0,0);
@@ -1156,7 +1198,7 @@ function drawMapRaw(){
       if(D.area*V.s*V.s<9000)continue;ctx.globalAlpha=selD&&selD.has(DIST.indexOf(D))?.75:.38;ctx.fillText(D.name.toLocaleUpperCase('tr'),X,Y)}}
   drawCrossings();
   for(const [t,la,lo,rot,size] of LABELS){const p=proj(la,lo);ctx.save();ctx.translate(sx(p.x),sy(p.y));ctx.rotate(rot);
-    ctx.font=`600 ${size}px ${DISP}`;ctx.fillStyle=C['water-ink'];ctx.globalAlpha=.85;ctx.fillText(t,0,0);ctx.restore()}
+    ctx.font=`600 ${size}px ${DISP}`;ctx.fillStyle=C['water-ink'];ctx.globalAlpha=.85;ctx.fillText(tr(t),0,0);ctx.restore()}
   ctx.globalAlpha=1;try{ctx.letterSpacing='0px'}catch(e){}
 }
 function drawReal(){
@@ -1239,7 +1281,7 @@ function drawLines(){
 }
 // Araç çizimi: c=bağlam, look=gövde tipi, color=hat rengi, skin=görünüm, pax=yolcu türleri, cars=vagon sayısı
 let VSC=1.2;
-const RECOLOR=['nostalji','gece','kis','hafif','lale','vapur','altin'];
+const RECOLOR=['nostalji','gece','kis','hafif','lale','vapur','altin','seri','destek','bayrak','yilbasi','ramazan'];
 function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
   if(skin==='metrobus')look='bus';else if(skin==='metro')look='metro';
   bus=look==='bus'?(bus||'std'):'std';
@@ -1256,6 +1298,12 @@ function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
   if(skin==='lale'){body='#6B2D8C';stripe='#F49AC1';band=null}
   if(skin==='vapur'){body='#FAFAF7';stripe='#E8B30E';band='#1E2528'}
   if(skin==='altin'){body='#D4AF37';stripe='#8C6A12';glow='#FFE58A';band=null}
+  if(skin==='seri'){body='#E4572E';stripe='#FFD23F';band=null}
+  if(skin==='destek'){body='#13293D';stripe='#E8B400';glow='#E8B400';band=null}
+  if(skin==='bayrak'){body='#E30A17';stripe='#FFFFFF';band=null}
+  if(skin==='yilbasi'){body='#1F6E43';stripe='#D7263D';band=null}
+  if(skin==='ramazan'){body='#1E3A5F';stripe='#F2C14E';glow='#F2C14E';band=null}
+  if(glow&&CFG.gfx==='pil')glow=null;
   const real=skin==='gercek'&&look!=='bus';if(real){body='#EEF1EF';win='#FFFFFF'}
   if(bus==='std'&&look==='bus'&&!RECOLOR.includes(skin)){body='#B9C0C4';band=null;win='#1E2528'}
   const secs=look==='bus'?cars+(bus==='akia'?3:2):cars+1;
@@ -1353,7 +1401,7 @@ function drawEvent(){if(!G.ev)return;const e=evDef(),t=performance.now()/1000;
     for(const i of G.ev.st){const s=G.st[i],X=sx(s.x),Y=sy(s.y),r=14+((t*1.2)%1)*18;ctx.globalAlpha=1-((t*1.2)%1);ctx.beginPath();ctx.arc(X,Y,r,0,Math.PI*2);ctx.stroke();
       ctx.globalAlpha=1;ctx.font=`16px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(e.ic,X,Y-16)}ctx.restore()}
   if(G.ev.k==='ariza'){const L=lineById(G.ev.line);if(L&&L._bz&&L._bz.length){const q=bzAt(L._bz,L._bz.length/2);ctx.save();ctx.font=`700 13px ${BODY}`;ctx.textAlign='center';ctx.textBaseline='middle';
-    const lab=`⚠ ${LABEL(L.id)} arızalı`,w=ctx.measureText(lab).width+14;ctx.fillStyle=C.warn;ctx.beginPath();ctx.roundRect(q.x-w/2,q.y-12,w,24,12);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(lab,q.x,q.y);ctx.restore()}}
+    const lab=tr(`⚠ ${LABEL(L.id)} arızalı`),w=ctx.measureText(lab).width+14;ctx.fillStyle=C.warn;ctx.beginPath();ctx.roundRect(q.x-w/2,q.y-12,w,24,12);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(lab,q.x,q.y);ctx.restore()}}
   if(G.ev.k==='kar'){ctx.save();ctx.fillStyle='rgba(255,255,255,.85)';for(let k=0;k<90;k++){const sp=20+(k*37)%40,x=((k*97.3)+Math.sin(t+k)*12)%W,y=((k*53.1)+t*sp)%H;ctx.beginPath();ctx.arc((x+W)%W,y,1.2+(k%3)*.6,0,Math.PI*2);ctx.fill()}ctx.restore()}}
 
 
@@ -1583,7 +1631,11 @@ function setManual(m){manual=m;$('#btnCenter').setAttribute('aria-pressed',Strin
 // ---------- Arayüz ----------
 let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800)}
 const lineBar=$('#lineBar');
-lineBar.addEventListener('click',e=>{const b=e.target.closest('.lbtn');if(!b||b.classList.contains('locked'))return;
+let buildArm='';
+lineBar.addEventListener('click',e=>{const bb=e.target.closest('[data-build]');if(bb){const id=bb.dataset.build;if(!(G.build||{})[id])return;
+    if(buildArm===id){buildArm='';speedBuild(id);return}buildArm=id;setTimeout(()=>{if(buildArm===id)buildArm=''},3500);
+    toast(`🏗 ${LABEL(id)} inşaatta, ${buildDays(id)} gün sonra açılır. Hemen bitirmek için ${BUILD_FAST} jetonla yeniden dokun.`);return}
+  const b=e.target.closest('.lbtn');if(!b||b.classList.contains('locked'))return;
   const id=b.dataset.line;G.sel=G.sel===id?null:id;confirmDel=0;hud(true)});
 const legendList=$('#legendList');
 TYPES.forEach((t,k)=>{const li=document.createElement('li');li.dataset.type=k;
@@ -1592,12 +1644,13 @@ TYPES.forEach((t,k)=>{const li=document.createElement('li');li.dataset.type=k;
 let confirmDel=0,lastHud='',lastBar='';
 function renderBar(){
   const un=G.lines.filter(l=>l.unlocked),next=G.level<G.levels.length?G.levels[G.level]:null;
-  const sig=un.map(l=>l.id+(l.st.length>1?1:0)+l.trains.length+(G.sel===l.id?'s':'')).join()+'|'+G.level;if(sig===lastBar)return;lastBar=sig;
+  const bl=Object.keys(G.build||{}),sig=un.map(l=>l.id+(l.st.length>1?1:0)+l.trains.length+(G.sel===l.id?'s':'')).join()+'|'+G.level+'|'+bl.join()+CFG.lang;if(sig===lastBar)return;lastBar=sig;
   lineBar.innerHTML=un.map(l=>`<button class="lbtn${l.st.length>1?' on':''}${G.sel===l.id?' sel':''}" data-line="${l.id}" style="--c:${l.color}" aria-pressed="${G.sel===l.id}" title="${esc(l.name)}">${LABEL(l.id)}${l.trains.length?`<span class="badge">${l.trains.length}</span>`:''}</button>`).join('')
+    +bl.map(id=>`<button class="lbtn build" data-build="${id}" style="--c:${LINEDEF[id].color}" title="İnşaatta">🏗<br>${LABEL(id)}</button>`).join('')
     +(next?`<button class="lbtn locked" title="Seviye ${G.level+1} ile açılır" tabindex="-1">🔒︎<br>Sv ${G.level+1}</button>`:'');
 }
 function hud(force){
-  syncPause();$('#vbTrain').classList.toggle('has',G.pool.train>0&&!G.over);$('#vbCar').classList.toggle('has',G.pool.car>0&&!G.over);
+  syncPause();hudEcon();$('#vbTrain').classList.toggle('has',G.pool.train>0&&!G.over);$('#vbCar').classList.toggle('has',G.pool.car>0&&!G.over);
   const sig=[G.score,G.week,Math.floor(G.t/DAY*48),G.level,G.pool.train,G.pool.car,gecitFree(),G.pool.gecit,G.sel,confirmDel,G.paused,G.speed,P.coins,
     G.lines.map(l=>l.st.length+':'+l.trains.length+':'+l.trains.reduce((a,t)=>a+t.cars,0)).join(),[...presentTypes()].join()].join('|');
   if(sig===lastHud&&!force)return;lastHud=sig;
@@ -1635,7 +1688,7 @@ function hud(force){
 }
 $('#actions').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const L=G.sel&&lineById(G.sel);if(!L)return;
   const act=b.dataset.act;
-  if(act==='train'){if(!G.pool.train)toast('Depoda araç yok. Seviye atlayınca ya da hafta başında yeni araç gelir.');else if(!addTrain(L))toast('Önce en az iki duraklı bir hat çiz.')}
+  if(act==='train'){if(!G.pool.train)toast('Depoda araç yok. Seviye atlayınca ya da hafta başında yeni araç gelir.');else if(!addTrain(L)&&L.st.length<2)toast('Önce en az iki duraklı bir hat çiz.')}
   else if(act==='untrain'){if(!removeTrain(L))toast('Hatta en az bir araç kalmalı. Hattı tamamen kaldırmak için "Hattı kaldır".');else toast('Araç depoya döndü, başka bir hatta ekleyebilirsin.')}
   else if(act==='car'){if(!L.trains.length)toast('Vagon takmak için önce hatta bir araç ekle.');else if(!G.pool.car)toast('Depoda vagon yok. Hafta ödülünden vagon seçebilirsin.');else addCar(L)}
   else if(act==='night'){G.night=G.night||[];if(G.night.includes(L.id)){G.night=G.night.filter(x=>x!==L.id);toast(`${LABEL(L.id)} gece 00:30-06:00 arası kapalı olacak.`)}
@@ -1676,7 +1729,7 @@ function takePhoto(){draw();const W0=cv.width,H0=cv.height,o=document.createElem
   c.fillStyle=C.paper||'#fff';c.fillRect(0,0,o.width,o.height);c.drawImage(cv,0,0);c.scale(DPR,DPR);const w=W0/DPR,y=H0/DPR;
   c.fillStyle=C.paper||'#fff';c.fillRect(0,y,w,96);c.fillStyle=C.ink||'#222';c.textBaseline='middle';
   c.font=`700 22px ${DISP}`;c.fillText('Raylı İstanbul',16,y+24);c.font=`500 13px ${BODY}`;c.fillStyle=C['ink-2']||'#555';
-  const ls=G.lines.filter(L=>L.st.length>1);c.fillText(`${G.score} puan · ${G.week}. hafta · ${ls.length} hat · ${G.st.filter(s=>s.revealed).length} durak${G.daily?' · Günün haritası':''}`,16,y+50);
+  const ls=G.lines.filter(L=>L.st.length>1);c.fillText(tr(`${G.score} puan · ${G.week}. hafta · ${ls.length} hat · ${G.st.filter(s=>s.revealed).length} durak${G.daily?' · Günün haritası':''}`),16,y+50);
   c.font=`700 11px ${DISP}`;try{c.letterSpacing='2px'}catch(e){}c.fillText('MAELSTROM STUDIO',16,y+78);try{c.letterSpacing='0px'}catch(e){}
   ls.slice(-8).reverse().forEach((L,k)=>{const X=w-30-k*36;c.fillStyle=L.color;c.beginPath();c.roundRect(X-15,y+66,30,22,5);c.fill();c.fillStyle='#fff';c.textAlign='center';c.font=`700 12px ${DISP}`;c.fillText(LABEL(L.id),X,y+77)});
   const url=o.toDataURL('image/png'),name=`metro-istanbul-${G.score}.png`;ST.photo=(ST.photo||0)+1;save('mi-stat',ST);checkAch();
@@ -1685,14 +1738,16 @@ function takePhoto(){draw();const W0=cv.width,H0=cv.height,o=document.createElem
     if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Raylı İstanbul ağım'}).catch(()=>{});return}
     const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('📷 Fotoğraf indirildi.')},'image/png')}
 $('#pmPhoto').onclick=takePhoto;
-$('#pmMenu').onclick=()=>{saveGame();$('#btnStart').textContent=`Devam et · ${G.score} puan`;$('#btnNew').hidden=false;renderDaily();renderAchCount();renderSides();renderDmap();$('#intro').hidden=false;hud(true)};
+$('#pmMenu').onclick=()=>{saveGame();$('#btnStart').textContent=`Devam et · ${G.score} puan`;$('#btnNew').hidden=false;renderDaily();renderLive();renderAchCount();renderSides();renderDmap();$('#intro').hidden=false;hud(true)};
 // Ödüllü reklamla devam: oyun başına bir kez. Android sürümünde AdMob köprüsü (AndroidTTS.showRewarded) varsa onu kullanır,
 // yoksa 5 saniyelik deneme ekranı gösterir. Reklam tamamlanınca taşan durak boşalır ve oyun kaldığı yerden sürer.
 function showRewarded(done){
+  if(P.adfree){done(true);return}
+  if(iosIap())$('#adNote').textContent='Kısa bir mola: birkaç saniye sonra kaldığın yerden devam edersin.';
   if(window.AndroidTTS&&AndroidTTS.showRewarded){window.__adDone=ok=>done(!!ok);try{AndroidTTS.showRewarded();return}catch(e){}}
   const m=$('#adModal');let n=5;$('#adCount').textContent=n;m.hidden=false;
   const iv=setInterval(()=>{n--;$('#adCount').textContent=n;if(n<=0){clearInterval(iv);m.hidden=true;done(true)}},1000)}
-function continueAfterAd(){const s=G.overSt;if(s){s.queue=s.queue.slice(0,2);s.crowd=0;s.warned=false}
+function continueAfterAd(){if(G.bankrupt){G.bankrupt=false;G.money=Math.max(G.money,0)+250;G.debtDays=0}const s=G.overSt;if(s){s.queue=s.queue.slice(0,2);s.crowd=0;s.warned=false}
   for(const t of G.st)if(t.crowd>.7)t.crowd=.7;
   Object.assign(G,{over:false,overSt:null,adUsed:true,modal:false,paused:false});$('#overModal').hidden=true;
   toast('Kaldığın yerden devam ediyorsun. Kalabalık durağa araç ya da hat ekle.');hud(true);saveGame()}
@@ -1704,14 +1759,14 @@ $('#btnGiveUp').onclick=()=>{$('#rescueModal').hidden=true;G.modal=false;endWith
 let shopWasPaused=true;
 function openShop(){shopWasPaused=G.paused;G.paused=true;renderShop();$('#shopModal').hidden=false;hud(true)}
 function renderShop(){
-  $('#coinShop').textContent=P.coins;renderSkins($('#busList'),BUSES,'bus');renderSkins($('#skinList'),SKINS,'skin')}
+  $('#coinShop').textContent=P.coins;renderSkins($('#busList'),BUSES,'bus');renderSkins($('#skinList'),SKINS,'skin');renderIap();if(andHasIap()&&!andIap())setTimeout(()=>{if(!$('#shopModal').hidden)renderIap()},1500)}
 function renderSkins(list,ARR,slot){
   list.innerHTML='';
   for(const sk of ARR){const own=P.owned.includes(sk.id),on=P[slot]===sk.id;
     const d=document.createElement('div');d.className='skin'+(on?' on':'');
     d.innerHTML=`<canvas width="360" height="112"></canvas><strong>${esc(sk.name)}</strong><p>${esc(sk.desc)}</p>
-      <button class="${own?'ghost':''}" ${on||(!own&&P.coins<sk.price)?'disabled':''}>${on?'Kullanılıyor':own?'Kullan':`₺ ${sk.price} jetonla al`}</button>`;
-    d.querySelector('button').onclick=()=>{if(!own){if(P.coins<sk.price)return;P.coins-=sk.price;P.owned.push(sk.id);toast(`${sk.name} alındı.`)}P[slot]=sk.id;persist();renderShop();hud(true)};
+      <button class="${own?'ghost':''}" ${on||(!own&&(sk.hidden||P.coins<sk.price))?'disabled':''}>${on?'Kullanılıyor':own?'Kullan':sk.hidden?`🔒︎ ${esc(sk.how)}`:`₺ ${sk.price} jetonla al`}</button>`;
+    d.querySelector('button').onclick=()=>{if(!own){if(sk.hidden||P.coins<sk.price)return;P.coins-=sk.price;P.owned.push(sk.id);toast(`${sk.name} alındı.`)}P[slot]=sk.id;persist();renderShop();hud(true)};
     list.appendChild(d);
     const c=d.querySelector('canvas').getContext('2d');c.scale(2,2);
     if(slot==='bus'){c.save();c.translate(70,28);c.scale(2.2,2.2);drawVehicle(c,'bus','#C2A52E',P.skin==='gece'?'klasik':P.skin,[0,1,2,3],0,5,sk.id);c.restore()}
@@ -1753,7 +1808,7 @@ $('#settingsModal').addEventListener('click',e=>{
     if(k==='vibrate'&&CFG.vibrate)vib(40);
     renderSettings();return}
   const ob=e.target.closest('[data-opt] button');if(ob){const k=ob.parentElement.dataset.opt;CFG[k]=ob.dataset.v;saveCfg();
-    if(k==='theme')applyTheme();if(k==='gfx')resize();if(k==='speed'){G.speed=+CFG.speed}
+    if(k==='theme')applyTheme();if(k==='gfx'){CFG.gfxAuto=true;saveCfg();resize()}if(k==='lang')applyLang();if(k==='speed'){G.speed=+CFG.speed}
     renderSettings();return}
 });
 $('#btnReset').onclick=()=>{if(!resetArm){resetArm=1;renderSettings();setTimeout(()=>{resetArm=0;if(!$('#settingsModal').hidden)renderSettings()},3500);return}
@@ -1770,13 +1825,13 @@ $('#btnHelp').onclick=()=>{G.paused=true;$('#intro').hidden=false;$('#btnStart')
 $('#btnStart').onclick=()=>{if(resumeOffer){resumeOffer=false;try{loadGame(SAVED)}catch(e){clearSave();newGame()}}
   resumeOffer=false;$('#btnNew').hidden=true;$('#intro').hidden=true;if(!G.over)G.paused=false;hud(true)};
 $('#btnNew').onclick=()=>{resumeOffer=false;clearSave();newGame();$('#btnNew').hidden=true;$('#intro').hidden=true;G.paused=false;hud(true)};
-$('#btnDmap').onclick=startDmap;renderDmap();
+$('#btnDmap').onclick=startDmap;renderDmap();$('#btnBudget').onclick=startBudget;
 $('#side_asia').onclick=()=>startSide('asia');$('#side_europe').onclick=()=>startSide('europe');renderSides();
 let resumeOffer=!!(SAVED&&SAVED.v===1);
 if(resumeOffer){$('#btnStart').textContent=`Devam et · ${SAVED.g.score} puan`;$('#btnNew').hidden=false}
 setInterval(()=>{if(G&&!G.paused)saveGame()},5000);
 addEventListener('pagehide',saveGame);
-$('#btnRestart').onclick=()=>{if(G.daily){startDmap();return}if(G.chap){startChap(G.chap);return}if(G.region){startSide(G.region);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
+$('#btnRestart').onclick=()=>{if(G.budget){startBudget();return}if(G.daily){startDmap();return}if(G.chap){startChap(G.chap);return}if(G.region){startSide(G.region);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
 $('#btnChaps').onclick=()=>{$('#intro').hidden=true;openChaps()};$('#btnOverChaps').onclick=()=>{$('#overModal').hidden=true;openChaps()};
 $('#btnAch').onclick=openAch;$('#btnAchClose').onclick=()=>{$('#achModal').hidden=true;G.paused=achWasPaused;hud(true)};
 $('#btnChapClose').onclick=()=>{$('#chapModal').hidden=true;if(G.over)$('#overModal').hidden=false;else if(!G.modal)G.paused=chapWasPaused;hud(true)};
@@ -1790,6 +1845,704 @@ for(const b of document.querySelectorAll('[data-reward]'))b.onclick=()=>{const r
   $('#weekModal').hidden=true;G.modal=false;hud(true)};
 window.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('button'))return;
   if(e.code==='Space'&&!G.over&&!G.modal&&$('#intro').hidden&&$('#shopModal').hidden&&$('#settingsModal').hidden){e.preventDefault();G.paused=!G.paused;hud(true)}});
+
+// İngilizce arayüz sözlüğü (Türkçe metin → İngilizce)
+const I18N_EXACT={
+// ---- HUD / header ----
+"İstanbul raylı sistem haritası":"Istanbul rail network map",
+"puan":"points",
+"Hız":"Speed",
+"Duraklat (boşluk)":"Pause (space)",
+"Yavaş":"Slow",
+"Normal hız":"Normal speed",
+"Hızlı":"Fast",
+"Görünüm":"View",
+"Gerçek güzergahları silik çizgiyle göster":"Show real routes as faint lines",
+"Rota":"Routes",
+"Haritayı otomatik ortala":"Auto-center the map",
+"Ortala":"Center",
+"Menü":"Menu",
+"Sesleri aç/kapat":"Sound on/off",
+"Ses":"Sound",
+"Görünüm mağazası":"Skin shop",
+"Ayarlar":"Settings",
+"Nasıl oynanır":"How to play",
+"Yolcu nereye gidiyor":"Where passengers go",
+"Dokun ya da bir hatta sürükle: araç ekler":"Tap or drag onto a line: adds a train",
+"Dokun ya da bir hatta sürükle: vagon takar":"Tap or drag onto a line: adds a car",
+"Araç":"Train",
+"Vagon":"Car",
+"Boğaz ya da Haliç'i metroyla geçmek için tünel/köprü":"Tunnel/bridge for crossing the Bosphorus or Golden Horn by metro",
+"Geçit":"Bridge",
+"Seçili hattı (seçili hat yoksa bütün hatları) kullanan yolcu sayısı":"Passengers using the selected line (or all lines if none is selected)",
+"Yolcu":"Passengers",
+"1. hafta · Pazartesi":"Week 1 · Monday",
+"Bütün hatlar açık":"All lines open",
+"Anadolu Yakası tamam":"Asian Side done",
+"Avrupa Yakası tamam":"European Side done",
+"🎯 Haftanın görevi tamam ✓":"🎯 Weekly mission done ✓",
+"🎯 Yeni bir hat aç":"🎯 Open a new line",
+"Yeni bir hat aç":"Open a new line",
+// clock parts
+"İlkbahar":"Spring","Yaz":"Summer","Sonbahar":"Autumn","Kış":"Winter",
+"Pazartesi":"Monday","Salı":"Tuesday","Çarşamba":"Wednesday","Perşembe":"Thursday","Cuma":"Friday","Cumartesi":"Saturday","Pazar":"Sunday",
+"🌙 Metrolar kapalı":"🌙 Metros closed",
+"Yoğun saat":"Rush hour",
+"Gece":"Night",
+// ---- pause menu ----
+"Oyun duraklatıldı":"Game paused",
+"▶ Devam et":"▶ Resume",
+"Bölümler":"Chapters",
+"Başarımlar":"Achievements",
+"Mağaza":"Shop",
+"📷 Fotoğraf":"📷 Photo",
+"Ana menü":"Main menu",
+// ---- ad / rescue ----
+"Reklam":"Ad",
+"Reklam bitince oyun devam edecek":"The game resumes after the ad",
+"Bu bir deneme reklam alanı. Google Play sürümünde burada gerçek ödüllü reklam gösterilecek.":"This is a test ad slot. The Google Play version will show a real rewarded ad here.",
+"Son şans":"Last chance",
+"İstasyon taşıyor":"Station overflowing",
+"Ek seferle bekleyen yolcuları bir kez taşıyabilirsin. Oyun başına bir hakkın var.":"An extra run can clear the waiting passengers once. You get one per game.",
+"Bitir":"End",
+"Ek sefer":"Extra run",
+// ---- splash / intro ----
+"Raylı İstanbul açılış ekranı":"Raylı İstanbul splash screen",
+"sunar":"presents",
+"Şehrin raylarını sen kur":"Build the city's rails",
+"İstanbul büyüyor":"Istanbul is growing",
+"İstanbul'un raylı sistem hatları (M2 Sefaköy, M7 Esenyurt ve M12 dahil), metrobüsü ve 39 ilçesi gerçek haritasıyla burada. Oyna'da M2 ile başla, puan topladıkça yeni hatlar açılsın. Bölümler'de her hattı tek tek oyna.":"Istanbul's rail lines (incl. M2 Sefaköy, M7 Esenyurt and M12), the metrobus and all 39 districts on the real map. In Play, start with M2 and unlock new lines as you score. In Chapters, play each line one by one.",
+"Bir istasyondan diğerine sürükleyerek hat kur. Ya da önce bir durağa, sonra diğerine dokun: hat kendiliğinden çizilir.":"Drag from one station to another to build a line. Or tap one station, then another: the line draws itself.",
+"Hattın ucundaki T tutamacına basılı tut, halka dolunca sürükleyerek uzat. Önceki durağa geri çekersen son durak kalkar.":"Hold the T handle at a line's end; when the ring fills, drag to extend. Drag back to the previous station to drop the last one.",
+"Hattın ortasına basılı tut, halka dolunca bir istasyona sürükle: araya durak eklenir.":"Hold the middle of a line; when the ring fills, drag to a station to insert it.",
+"Yolcunun şekli gitmek istediği yerin türü. Her teslim edilen yolcu 1 puan.":"A passenger's shape is the type of place they want to go. Each delivery is 1 point.",
+"Metro ve tramvayla Boğaz'ı ya da Haliç'i geçmek geçit harcar. Marmaray, metrobüs ve teleferik suyu bedava geçer.":"Crossing the Bosphorus or Golden Horn by metro or tram uses a bridge. Marmaray, metrobus and cable car cross water for free.",
+"Bir istasyonda 6'dan fazla yolcu birikirse sayaç dolar. Dolarsa oyun biter.":"If more than 6 passengers pile up at a station, its timer fills. When it's full, the game ends.",
+"Alttaki Araç ya da Vagon sayısına dokun (seçili ya da en kalabalık hatta eklenir) veya sürükleyip istediğin hattın üstüne bırak.":"Tap the Train or Car count below (adds to the selected or busiest line) or drag it onto any line.",
+"Topladığın jetonlarla mağazadan araç görünümü alırsın.":"Spend the coins you earn on vehicle skins in the shop.",
+"Gece 00:30-06:00 arası metrolar kapanır (cuma ve cumartesi geceleri açık). Metrobüs 24 saat çalışır; hattı seçip 🌙 ile gece seferi verebilirsin.":"Metros close 00:30-06:00 (open Friday and Saturday nights). The metrobus runs 24 hours; select a line and tap 🌙 to give it night service.",
+"Günün haritası her gün başka bir hat ve başka bir kuralla başlar.":"The daily map starts with a different line and rule every day.",
+"Duraklatınca 📷 Fotoğraf ile kurduğun ağın resmini kaydedebilirsin.":"When paused, use 📷 Photo to save a picture of your network.",
+"Bir hattı seçince o hattın ilk aracında gong ve durak anonsu duyarsın.":"Select a line to hear the chime and station announcements on its first train.",
+"Oyna":"Play",
+"Yeni oyun başlat":"Start new game",
+"Anadolu Yakası":"Asian Side",
+"Avrupa Yakası":"European Side",
+"📅 Günün haritası":"📅 Daily map",
+"📅 Günün haritası ·":"📅 Daily map ·",
+"🏆 Skorlar ve başarımlar ·":"🏆 Scores & achievements ·",
+"Mağaza ·":"Shop ·",
+// ---- level / week modals ----
+"Seviye atladın":"Level up",
+"Yeni hat açıldı":"New line unlocked",
+"Yeni hatlar açıldı":"New lines unlocked",
+"Anadolu Yakasının bütün hatları açıldı!":"All Asian Side lines unlocked!",
+"Avrupa Yakasının bütün hatları açıldı!":"All European Side lines unlocked!",
+"Depoya 1 araç ve 10 jeton eklendi. Yeni hattın istasyonları haritada belirmeye başladı.":"1 train and 10 coins added to the depot. The new line's stations are appearing on the map.",
+"Devam":"Continue",
+"Yeni hafta":"New week",
+"Depoya 1 araç geldi":"1 train added to the depot",
+"Bu hafta bir ödül daha seç.":"Pick one more reward this week.",
+"Bir araca takılır, kapasitesini artırır.":"Attaches to a train and adds capacity.",
+"2 köprü/tünel hakkı":"2 bridges/tunnels",
+"Metro ya da tramvay hattın Boğaz'ı veya Haliç'i 2 kez daha geçebilsin. Suyu geçmeyeceksen vagon ya da araç seç.":"Lets metro or tram lines cross the Bosphorus or Golden Horn 2 more times. Not crossing water? Pick a car or train.",
+"Bir araç daha":"One more train",
+"Depoya ikinci bir araç eklenir.":"A second train is added to the depot.",
+"🌙 Gece seferi hakkı":"🌙 Night service slot",
+"Bir hat daha bütün gece çalışabilir.":"One more line can run all night.",
+// ---- achievements modal / board ----
+"Skorlar ve başarımlar":"Scores & achievements",
+"Kapat":"Close",
+"En iyi oyunların":"Your best games",
+"Henüz bitmiş oyun yok. Oyna modunda ilk oyununu bitir, skorun burada görünsün.":"No finished games yet. Finish a game in Play mode to see your score here.",
+"İstatistikler":"Statistics",
+"Taşınan yolcu":"Passengers carried",
+"Su üzerinden":"Over water",
+"Metrobüs":"Metrobus",
+"Atlatılan olay":"Events survived",
+"Biten oyun":"Games played",
+"En uzun oyun":"Longest game",
+"Tek hat rekoru":"Single-line record",
+"Günün haritası":"Daily map",
+"Fotoğraf":"Photos",
+"Haftalık görev":"Weekly missions",
+"Bölüm yıldızları":"Chapter stars",
+"Günlük görev":"Daily task",
+"Tamamlandı, yarın yenisi gelir":"Done, a new one comes tomorrow",
+"Günün haritasını bir kez oyna":"Play the daily map once",
+"· Günün haritasını bir kez oyna":"· Play the daily map once",
+"Bir olayı (derbi, sis, konser...) atlat":"Survive an event (derby, fog, concert...)",
+"· Bir olayı (derbi, sis, konser...) atlat":"· Survive an event (derby, fog, concert...)",
+// achievements
+"İlk yolcu":"First passenger","İlk yolcunu gideceği yere ulaştır.":"Deliver your first passenger.",
+"Kıtalar arası":"Intercontinental","Boğaz'ın ya da Haliç'in üzerinden bir yolcu taşı.":"Carry a passenger across the Bosphorus or Golden Horn.",
+"İki yaka bir":"Two shores as one","Su üzerinden toplam 50 yolcu taşı.":"Carry 50 passengers over water in total.",
+"Deniz altından 100":"100 under the sea","Marmaray'da 100 yolcu taşı.":"Carry 100 passengers on Marmaray.",
+"Metrobüsün bütün duraklarını tek hatta bağla.":"Connect every metrobus station in one line.",
+"Altunizade aktarması":"Altunizade transfer","Metrobüsle 200 yolcu taşı.":"Carry 200 passengers by metrobus.",
+"Bin yolcu":"A thousand riders","Toplam 1000 yolcu taşı.":"Carry 1000 passengers in total.",
+"Mega kent":"Megacity","Toplam 10.000 yolcu taşı.":"Carry 10,000 passengers in total.",
+"Yoğun gün":"Busy day","Tek oyunda 200 puan topla.":"Score 200 points in one game.",
+"On hafta":"Ten weeks","Bir oyunda 10. haftaya ulaş.":"Reach week 10 in one game.",
+"Büyük filo":"Big fleet","Haritada aynı anda 10 araç çalıştır.":"Run 10 trains on the map at once.",
+"Her havada sefer":"All-weather service","Bir olayı (derbi, konser, sis, kar, arıza...) oyun bitmeden atlat.":"Survive an event (derby, concert, fog, snow, breakdown...) before game over.",
+"Gece seferi":"Night service","Gece yarısından sonra tek oyunda 30 yolcu taşı.":"Carry 30 passengers after midnight in one game.",
+"Üç yıldız":"Three stars","Bir bölümde 3 yıldız al.":"Get 3 stars in a chapter.",
+"Hat hat İstanbul":"Istanbul line by line","5 bölümde yıldız al.":"Earn stars in 5 chapters.",
+"Gece kuşu":"Night owl","Aynı anda 3 hatta gece seferi ver.":"Run night service on 3 lines at once.",
+"Günün haritasını oyna.":"Play the daily map.",
+"Yedi harita":"Seven maps","Günün haritasını 7 gün üst üste oyna.":"Play the daily map 7 days in a row.",
+"Fırtınaya alışkın":"Storm-hardened","Toplam 5 olay atlat.":"Survive 5 events in total.",
+"Kriz masası":"Crisis desk","Toplam 20 olay atlat.":"Survive 20 events in total.",
+"Dört mevsim":"Four seasons","Bir oyunda 13. haftaya ulaş, bütün mevsimleri gör.":"Reach week 13 in one game and see every season.",
+"Metropol":"Metropolis","Tek oyunda 500 puan topla.":"Score 500 points in one game.",
+"Raylı başkent":"Rail capital","Tek oyunda 1000 puan topla.":"Score 1000 points in one game.",
+"İki yaka bir İstanbul":"Two shores, one Istanbul","Anadolu ve Avrupa yakası modlarının ikisini de tamamla.":"Complete both the Asian and European Side modes.",
+"Bütün hatlar":"All lines","Bütün bölümlerde en az bir yıldız al.":"Get at least one star in every chapter.",
+"Koleksiyoncu":"Collector","Mağazadan 3 görünüm satın al.":"Buy 3 skins in the shop.",
+"Ana arter":"Main artery","Tek oyunda bir hatla 1000 yolcu taşı.":"Carry 1000 passengers on one line in one game.",
+"Tam dizi":"Full set","Bir araca 3 vagon tak.":"Attach 3 cars to one train.",
+"Megapol":"Megalopolis","Toplam 50.000 yolcu taşı.":"Carry 50,000 passengers in total.",
+"Hatıra fotoğrafı":"Souvenir photo","Kurduğun ağın fotoğrafını kaydet.":"Save a photo of your network.",
+"Görev adamı":"Mission master","5 haftalık görev tamamla.":"Complete 5 weekly missions.",
+"Her gün yolda":"On the move daily","Günlük görevi 7 gün üst üste tamamla.":"Complete the daily task 7 days in a row.",
+// ---- chapters ----
+"Her hat ayrı bir bölüm":"Every line is a chapter",
+"Bölümde yalnızca o hattın istasyonları çıkar. Hedef puana ulaşınca 1 yıldız alırsın ve sonraki bölüm açılır. Daha çok yolcu taşırsan 2 ve 3 yıldız gelir.":"A chapter shows only that line's stations. Reach the target for 1 star and unlock the next chapter. Carry more passengers for 2 and 3 stars.",
+"Bölüm tamamlandı":"Chapter complete",
+"Sonraki bölüm":"Next chapter",
+"Devam et":"Continue",
+"Yenikapı – Hacıosman · T2 nostaljik tramvay":"Yenikapı – Hacıosman · T2 historic tram",
+"Kabataş – Bağcılar · F1 ve F2 füniküler":"Kabataş – Bağcılar · F1 & F2 funicular",
+"Levent – Hisarüstü · F4 füniküler":"Levent – Hisarüstü · F4 funicular",
+// ---- game over ----
+"Hat tıkandı":"Line jammed",
+"İstasyon taştı":"Station overflowed",
+"▶ Reklam izle, kaldığın yerden devam et":"▶ Watch an ad to continue",
+"Yeniden başla":"Restart",
+// ---- settings ----
+"Ses düzeyi":"Volume",
+"Araç sesleri":"Vehicle sounds",
+"Motor, fren ve kapı sesleri":"Engine, brake and door sounds",
+"Gong ve durak anonsu":"Chime & announcements",
+"Metro ve tramvayda seçili hattın ilk aracında çalar. Metrobüste anons yok.":"Plays on the selected line's first train on metro and tram. No announcements on the metrobus.",
+"Anons sesi":"Announcer voice",
+"Kadın sesi öncelikli":"Female voice preferred",
+"İngilizce tekrar":"English repeat",
+"\"Next station\" kısmını da aynı Türkçe kadın sesi okur":"The same Turkish female voice also reads \"Next station\"",
+"Anonsu dene":"Test announcement",
+"▶ Dinle":"▶ Listen",
+"Titreşim":"Vibration",
+"Seviye atlarken ve oyun bitince":"On level up and game over",
+"Hatırlatma bildirimi":"Reminder notification",
+"Bir süre oynamazsan telefonuna oyuna çağıran bildirim gelir (uygulamada)":"If you don't play for a while, your phone gets a reminder (in the app)",
+"Oyun":"Game",
+"Zorluk":"Difficulty",
+"Kalabalık sayacı ve yolcu sıklığı. Başlangıç araçları yeni oyunda değişir.":"Crowd timer and passenger rate. Starting trains change in a new game.",
+"Kolay":"Easy",
+"Zor":"Hard",
+"Başlangıç hızı":"Starting speed",
+"Oyun bu hızla açılır":"The game starts at this speed",
+"Harita":"Map",
+"Tema":"Theme",
+"Sistem":"System",
+"Açık":"Light",
+"Koyu":"Dark",
+"İstasyon adları":"Station names",
+"Otomatik: yakınlaşınca görünür":"Auto: shown when zoomed in",
+"Otomatik":"Auto",
+"Hep":"Always",
+"Az":"Few",
+"Grafik":"Graphics",
+"Pil tasarrufu daha az çözünürlük ve 30 kare/sn kullanır":"Battery saver uses lower resolution and 30 fps",
+"Yüksek":"High",
+"Dengeli":"Balanced",
+"Pil":"Battery",
+"Gerçek güzergahlar":"Real routes",
+"Hatların gerçek rotası silik çizgiyle":"Lines' real routes as faint lines",
+"Hattı basılı tutarak tut":"Hold to grab a line",
+"Uzatmak ya da durak eklemek için önce yarım saniye basılı tut (yanlışlıkla çizimi önler)":"Hold for half a second before extending or inserting (prevents accidental edits)",
+"Basılı tutarak tut":"Hold to grab",
+"Gece seferleri":"Night service",
+"Metrolar 00:30-06:00 arası kapanır, metrobüs ve seçtiğin hatlar çalışır":"Metros close 00:30-06:00; the metrobus and lines you pick keep running",
+"İlçe sınırları ve adları":"District borders & names",
+"İlçe sınırları":"District borders",
+"İlerleme":"Progress",
+"İlerlemeyi sıfırla":"Reset progress",
+"Jetonlar, alınan görünümler ve en iyi puan silinir":"Deletes coins, bought skins and best score",
+"Sıfırla":"Reset",
+"Eminim, sıfırla":"Sure, reset",
+"Reklam gizlilik seçenekleri":"Ad privacy options",
+"Reklamlar için verdiğin izni değiştir":"Change your ad consent",
+"Aç":"Open",
+". Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.":". Map data © OpenStreetMap contributors (ODbL). District borders: istanbul-districts-geojson.",
+"Otomatik (en iyi kadın sesi)":"Auto (best female voice)",
+"Bu cihazda Türkçe ses yok, sadece gong çalar":"No Turkish voice on this device; only the chime plays",
+"Kadın sesi bulunamadı. Telefon Ayarları > Metin okuma çıkışı > Google Konuşma Hizmetleri > Türkçe ses verilerini indir.":"No female voice found. Phone Settings > Text-to-speech output > Speech Services by Google > download Turkish voice data.",
+// ---- shop ----
+"jeton":"coins",
+"Araç görünümleri yalnızca süs, oyunun zorluğunu değiştirmez. Jetonları yolcu taşıyarak ve seviye atlayarak kazanırsın: her 5 yolcu 1 jeton, her seviye 10 jeton.":"Vehicle skins are cosmetic only and don't change difficulty. Earn coins by carrying passengers and leveling up: 1 coin per 5 passengers, 10 per level.",
+"Metrobüs araçları":"Metrobus vehicles",
+"Bütün araçlar için görünüm":"Skins for all vehicles",
+"Gerçek parayla paketler.":"Real-money packs.",
+"Jeton paketleri ve reklamsız destekçi paketi Google Play ve App Store uygulamasında satılır. Bu web sürümünde ödeme alınmıyor.":"Coin packs and the ad-free supporter pack are sold in the Google Play and App Store apps. This web version takes no payments.",
+"Kullanılıyor":"In use",
+"Kullan":"Use",
+"Gerçek tren setleri":"Real trainsets","İstanbul'daki gibi beyaz gövde, hat renginde şerit ve koyu camlar.":"White body, line-color stripe and dark windows, like in Istanbul.",
+"Klasik":"Classic","Her hat kendi aracıyla: metro, tramvay, Marmaray, metrobüs.":"Each line with its own vehicle: metro, tram, Marmaray, metrobus.",
+"Metrobüs görünümü":"Metrobus look","Bütün araçlar körüklü metrobüs olur.":"All vehicles become articulated metrobuses.",
+"Metro görünümü":"Metro look","Bütün araçlar burunlu metro dizisi olur.":"All vehicles become nosed metro trains.",
+"Nostaljik tramvay":"Historic tram","Kırmızı-krem İstiklal tramvayı boyası.":"Red-and-cream İstiklal tram livery.",
+"Koyu gövde, hat renginde parlayan farlar.":"Dark body, headlights glowing in line color.",
+"Karlı sefer":"Snow run","Buz mavisi gövde, çatıda kar.":"Ice-blue body, snow on the roof.",
+"1989 hafif metro":"1989 light metro","İlk hafif metro dizileri gibi krem gövde, kırmızı şerit.":"Cream body and red stripe like the first light metro trains.",
+"Lale":"Tulip","Lale moru gövde, pembe şerit.":"Tulip-purple body, pink stripe.",
+"Vapur boyası":"Ferry livery","Beyaz gövde, sarı-siyah baca şeridi.":"White body, yellow-black funnel stripe.",
+"Altın seri":"Gold series","Parıldayan altın gövde. Koleksiyonun en pahalısı.":"Gleaming gold body. The priciest in the collection.",
+"Standart metrobüs":"Standard metrobus","İstanbul'daki gibi gri, körüklü otobüs.":"Grey articulated bus, like in Istanbul.",
+"25 metre, çift körüklü; beyaz gövde, kırmızı şerit.":"25 m, double-articulated; white body, red stripe.",
+"21 metre, tek körüklü, yerli üretim.":"21 m, single-articulated, made in Türkiye.",
+"Uzun körüklü gövde, lacivert cam bandı.":"Long articulated body, navy window band.",
+// ---- passenger types (legend) ----
+"Konut":"Homes","İş merkezi":"Offices","Okul / üniversite":"School / university","Çarşı / AVM":"Bazaar / mall","Hastane":"Hospital","Vapur iskelesi":"Ferry pier","Havalimanı":"Airport",
+// ---- modes ----
+"Banliyö / Marmaray":"Suburban / Marmaray","Tramvay":"Tram","Füniküler":"Funicular","Tarihi füniküler":"Historic funicular","Teleferik":"Cable car",
+// ---- daily map modifiers ----
+"Sakin gün":"Calm day","Ek kural yok, en iyi skoru kovala.":"No extra rule; chase the best score.",
+"Karlı sabah":"Snowy morning","Oyun kar yağışıyla başlar, araçlar ilk gün yavaş.":"Starts in snowfall; trains are slow on day one.",
+"Kalabalık şehir":"Crowded city","Yolcular %15 daha sık gelir.":"Passengers arrive 15% more often.",
+"Kısıtlı filo":"Limited fleet","Bir araç eksik başlarsın ama 2 fazladan geçit hakkın var.":"You start one train short, but with 2 extra bridges.",
+"Köprüler serbest":"Free bridges","4 fazladan geçit hakkıyla başlarsın.":"You start with 4 extra bridges.",
+"Vagonlu başlangıç":"Cars from the start","Depoda 2 vagonla başlarsın, yolcular biraz daha sık gelir.":"You start with 2 cars in the depot; passengers come a bit more often.",
+"Yağmurlu gün":"Rainy day","Oyun sağanak yağmurla başlar, bütün duraklar kalabalık.":"Starts in a downpour; all stations are busy.",
+// ---- events ----
+"Derbi günü":"Derby day","Bayram yoğunluğu":"Holiday rush","Kar yağışı":"Snowfall","Arıza":"Breakdown","Konser gecesi":"Concert night","Fuar haftası":"Fair week","Sis: vapurlar iptal":"Fog: ferries cancelled","Sağanak yağmur":"Downpour","İstanbul Maratonu":"Istanbul Marathon","Yılbaşı gecesi":"New Year's Eve","Okullar açıldı":"Schools reopen",
+"❄ Kar yağıyor! Araçlar yavaş gidiyor.":"❄ It's snowing! Trains are running slow.",
+"🌧 Sağanak yağmur: herkes raylı sistemi seçti, bütün duraklar daha kalabalık.":"🌧 Downpour: everyone takes the rails, all stations are busier.",
+"🏃 İstanbul Maratonu: köprü koşuculara kapalı, metrobüs yavaş ilerliyor.":"🏃 Istanbul Marathon: the bridge is closed for runners, the metrobus crawls.",
+"🎒 Okullar açıldı: sabah ve akşam bütün hatlar daha yoğun.":"🎒 Schools reopen: all lines are busier mornings and evenings.",
+// ---- notes / toasts ----
+"🌅 Sabah 06:00: bütün hatlar yeniden sefere başladı.":"🌅 06:00: all lines are running again.",
+"❄️ Kış geldi: günler kısa, kar yağabilir.":"❄️ Winter is here: short days, snow possible.",
+"☀️ Yaz geldi: günler uzun.":"☀️ Summer is here: long days.",
+"🌸 İlkbahar geldi.":"🌸 Spring is here.",
+"🍂 Sonbahar geldi.":"🍂 Autumn is here.",
+"🎯 Haftalık görev tamam · +15 jeton ve 1 vagon":"🎯 Weekly mission done · +15 coins and 1 car",
+"🏁 Anadolu Yakası tamamlandı":"🏁 Asian Side complete",
+"🏁 Avrupa Yakası tamamlandı":"🏁 European Side complete",
+"Bu hattın araçları en fazla 3 vagon taşıyabilir.":"Trains on this line can pull at most 3 cars.",
+"Geçit kalmadı. Haftalık ödülden geçit seç ya da suyu Marmaray, metrobüs veya teleferikle geç.":"No bridges left. Pick one as a weekly reward, or cross by Marmaray, metrobus or cable car.",
+"Açık hatların hepsi kullanımda. Seviye atla ya da bir hattı kaldır.":"All unlocked lines are in use. Level up or remove a line.",
+"Şimdi bağlamak istediğin durağa dokun. Vazgeçmek için boş yere dokun.":"Now tap the station to connect. Tap empty space to cancel.",
+"Hattı uzatmak ya da araya durak eklemek için hattın üstüne basılı tut, halka dolunca sürükle.":"To extend a line or insert a station, hold on the line and drag once the ring fills.",
+"Depoda araç yok. Seviye atlayınca ya da hafta başında yeni araç gelir.":"No trains in the depot. New ones come on level up or at the start of each week.",
+"Önce en az iki duraklı bir hat çiz.":"First draw a line with at least two stations.",
+"Hatta en az bir araç kalmalı. Hattı tamamen kaldırmak için \"Hattı kaldır\".":"A line needs at least one train. To remove it entirely, use \"Remove line\".",
+"Araç depoya döndü, başka bir hatta ekleyebilirsin.":"Train returned to the depot; you can add it to another line.",
+"Vagon takmak için önce hatta bir araç ekle.":"Add a train to the line before adding cars.",
+"Depoda vagon yok. Hafta ödülünden vagon seçebilirsin.":"No cars in the depot. You can pick one as a weekly reward.",
+"Önce bir hat çiz, sonra araç ekle.":"Draw a line first, then add a train.",
+"+ Araç":"+ Train",
+"+ Vagon":"+ Car",
+"− Araç":"− Train",
+"Bir hattın üstüne bırak.":"Drop it on a line.",
+"📷 Fotoğraf Galeri > Pictures > Raylı İstanbul klasörüne kaydedildi.":"📷 Photo saved to Gallery > Pictures > Raylı İstanbul.",
+"📷 Fotoğraf kaydedilemedi.":"📷 Couldn't save the photo.",
+"📷 Fotoğraf indirildi.":"📷 Photo downloaded.",
+"Raylı İstanbul ağım":"My Raylı İstanbul network",
+"Kaldığın yerden devam ediyorsun. Kalabalık durağa araç ya da hat ekle.":"Back where you left off. Add a train or line to the crowded station.",
+"Reklam tamamlanmadı.":"Ad not completed.",
+"Ek sefer yolcuları taşıdı. Bu hakkı bu oyunda kullandın, durağa araç ya da hat ekle.":"The extra run cleared the passengers. That was this game's only one; add a train or line there.",
+"İlerleme sıfırlandı.":"Progress reset.",
+// ---- action panel / vehicle info ----
+"yolcu taşıdı":"passengers carried",
+"🌙 24 saat":"🌙 24 hours",
+"↶ Geri al":"↶ Undo",
+"Eminim, kaldır":"Sure, remove",
+"Hattı kaldır":"Remove line",
+"Durakta:":"At station:",
+"Sıradaki durak:":"Next station:",
+// ---- v4.0: satisfaction, construction, budget, live events, login reward, IAP, language ----
+"Yolcu memnuniyeti duraklar kalabalıklaştıkça düşer. Yüksek memnuniyet puanı 1,25 katına çıkarır, düşük memnuniyet azaltır.":"Passenger satisfaction drops as stations get crowded. High satisfaction multiplies points by 1.25; low satisfaction lowers them.",
+"Bazı hatlar (M12, M7) gerçekte olduğu gibi önce inşaatta bekler. Açılınca çevresinde yolcu artar.":"Some lines (M12, M7) start under construction, as in real life. Once open, ridership around them grows.",
+"Bütçe modunda hat ve araç para tutar, her yolcu bilet parası getirir. Kasa 3 gün eksi kalırsa iflas edersin.":"In Budget mode, lines and trains cost money and each passenger pays a fare. Stay in the red for 3 days and you go bankrupt.",
+"💰 Bütçe modu":"💰 Budget mode",
+"Dil / Language":"Language",
+"Durak adları ve anonslar Türkçe kalır":"Station names and announcements stay in Turkish",
+"Satın alımları geri yükle":"Restore purchases",
+"Reklamsız + destekçi paketini bu cihazda yeniden aç":"Re-enable the ad-free + supporter pack on this device",
+"Geri yükle":"Restore",
+"Günlük giriş ödülü":"Daily login reward",
+"Ödülü al":"Claim reward",
+"Yedinci gün! 75 jeton seni bekliyor.":"Day seven! 75 coins are waiting for you.",
+"Yedinci gün! 50 jeton ve sadece seriyle kazanılan Seri ateşi görünümü.":"Day seven! 50 coins plus the streak-only Streak Fire skin.",
+"🔥 Seri ateşi görünümü kazandın! Mağazadan seçebilirsin.":"🔥 You earned the Streak Fire skin! Pick it in the shop.",
+"Seri ateşi":"Streak Fire","7 gün üst üste günlük ödülü alınca gelir. Turuncu gövde, sarı alev şeridi.":"Unlocks after claiming the daily reward 7 days in a row. Orange body, yellow flame stripe.","7 gün üst üste gel":"Play 7 days in a row",
+"Destekçi":"Supporter","Reklamsız + destekçi paketiyle gelir. Lacivert gövde, altın şerit.":"Comes with the ad-free + supporter pack. Navy body, gold stripe.","Destekçi paketiyle":"With supporter pack",
+"Al bayrak":"Crimson Flag","Cumhuriyet Bayramı etkinliğinin ödülü. Kırmızı gövde, beyaz şerit.":"Republic Day event reward. Red body, white stripe.","Cumhuriyet Bayramı etkinliği":"Republic Day event",
+"Yılbaşı":"New Year","Yılbaşı etkinliğinin ödülü. Çam yeşili gövde, kırmızı şerit.":"New Year event reward. Pine-green body, red stripe.","Yılbaşı etkinliği":"New Year event",
+"Ramazan fenerleri":"Ramadan Lanterns","Ramazan etkinliğinin ödülü. Gece mavisi gövde, fener sarısı ışık.":"Ramadan event reward. Midnight-blue body, lantern-yellow light.","Ramazan etkinliği":"Ramadan event",
+"Sadık yolcu":"Loyal rider","Günlük giriş ödülünü 7 gün üst üste al.":"Claim the daily login reward 7 days in a row.",
+"Temel atma":"Groundbreaking","İnşaattaki bir hattı hizmete aç.":"Open a line that was under construction.",
+"Mutlu şehir":"Happy city","5. haftada yolcu memnuniyeti %90 ya da üstünde olsun.":"Have 90%+ passenger satisfaction in week 5.",
+"Kârlı işletme":"Profitable operator","Bütçe modunda kasa artıdayken 5. haftaya ulaş.":"Reach week 5 in Budget mode with money in the bank.",
+"İnşaatta":"Under construction",
+"Esenyurt uzatması":"Esenyurt extension",
+"Kasa boşaldı, iflas!":"Out of money, bankrupt!",
+"▶ Kaldığın yerden devam et":"▶ Continue where you left off",
+"Kısa bir mola: birkaç saniye sonra kaldığın yerden devam edersin.":"Short break: you'll continue in a few seconds.",
+"29 Ekim kutlaması":"29 October celebration",
+"Cumhuriyet Bayramı":"Republic Day","Ramazan":"Ramadan","Ramazan Bayramı":"Eid al-Fitr","Kurban Bayramı":"Eid al-Adha","Lale Festivali":"Tulip Festival","23 Nisan":"23 April",
+"Taksim, Kadıköy ve Yenikapı'da kutlama kalabalığı.":"Celebration crowds in Taksim, Kadıköy and Yenikapı.",
+"Metrobüs koşu günü yavaş ilerler.":"The metrobus runs slow on race day.",
+"Taksim ve Kadıköy'de yılbaşı kalabalığı.":"New Year crowds in Taksim and Kadıköy.",
+"İftar saatinde (18:30-20:30) bütün duraklar daha kalabalık.":"All stations are busier at iftar time (18:30-20:30).",
+"Otogar ve havalimanlarına bayram akını.":"Holiday rush to the bus terminal and airports.",
+"Emirgan'da laleler açtı. Lale görünümü bu etkinlikte bedava.":"Tulips are blooming in Emirgan. The Tulip skin is free during this event.",
+"Ulusal Egemenlik ve Çocuk Bayramı kutlu olsun!":"Happy National Sovereignty and Children's Day!",
+"Görünüm almak için jeton paketi.":"A coin pack for buying skins.",
+"Bütün görünümlere yetecek büyük paket.":"A big pack, enough for every skin.",
+"Reklamsız + destekçi":"Ad-free + supporter",
+"Oyun bittiğinde reklam izlemeden devam edersin, Destekçi görünümü gelir ve Maelstrom Studio'ya destek olursun.":"Continue after game over without ads, get the Supporter skin and support Maelstrom Studio.",
+"Paketler":"Packs",
+"✓ Sende":"✓ Owned",
+"💛 Teşekkürler! Reklamsız devam ve Destekçi görünümü açıldı.":"💛 Thank you! Ad-free continue and the Supporter skin are unlocked.",
+"Ödeme onay bekliyor. Onaylanınca paket kendiliğinden gelir.":"Payment pending. The pack arrives automatically once approved.",
+"Satın alma tamamlanamadı. Daha sonra yeniden dene.":"Purchase failed. Please try again later.",
+"Destekçi paketin geri yüklendi.":"Your supporter pack was restored.",
+"Mağaza bilgisi henüz gelmedi, biraz sonra dene.":"Store info hasn't loaded yet; try again shortly.",
+"Satın alma şu an açılamadı.":"Couldn't open the purchase right now.",
+"Satın alımlar kontrol ediliyor…":"Checking purchases…",
+"Telefonun zorlandığı için grafik Pil moduna alındı, oyun daha akıcı. Ayarlar > Grafik'ten değiştirebilirsin.":"Graphics switched to Battery mode because your phone was struggling. Change it in Settings > Graphics.",
+// ---- canvas-drawn ----
+"Marmaray Tüneli":"Marmaray Tunnel",
+"MARMARA DENİZİ":"SEA OF MARMARA",
+"KARADENİZ":"BLACK SEA",
+"İSTANBUL BOĞAZI":"BOSPHORUS",
+"HALİÇ":"GOLDEN HORN",
+"15 Temmuz Şehitler Köprüsü":"15 July Martyrs Bridge",
+"Fatih Sultan Mehmet Köprüsü":"Fatih Sultan Mehmet Bridge",
+"Yavuz Sultan Selim Köprüsü":"Yavuz Sultan Selim Bridge",
+"İstanbul Havalimanı (IST)":"Istanbul Airport (IST)",
+"Sabiha Gökçen Havalimanı (SAW)":"Sabiha Gökçen Airport (SAW)",
+"Galata Kulesi":"Galata Tower","Ayasofya":"Hagia Sophia","Sultanahmet Camii":"Blue Mosque","Topkapı Sarayı":"Topkapı Palace",
+"Kız Kulesi":"Maiden's Tower","Dolmabahçe Sarayı":"Dolmabahçe Palace","Rumeli Hisarı":"Rumeli Fortress","Anadolu Hisarı":"Anadolu Fortress",
+"Çamlıca Camii":"Çamlıca Mosque","Ortaköy Camii":"Ortaköy Mosque","Kapalıçarşı":"Grand Bazaar","Süleymaniye Camii":"Süleymaniye Mosque",
+"Beylerbeyi Sarayı":"Beylerbeyi Palace","Emirgan Korusu":"Emirgan Park","Belgrad Ormanı":"Belgrade Forest",
+"Fenerbahçe Feneri":"Fenerbahçe Lighthouse","Eyüp Sultan Camii":"Eyüp Sultan Mosque","Yedikule Hisarı":"Yedikule Fortress",
+"Çırağan Sarayı":"Çırağan Palace","Yıldız Parkı":"Yıldız Park","Göztepe Parkı":"Göztepe Park",
+"Florya Atatürk Ormanı":"Florya Atatürk Forest","Atatürk Olimpiyat Stadı":"Atatürk Olympic Stadium","Pierre Loti Tepesi":"Pierre Loti Hill","Moda Sahili":"Moda Shore"
+};
+const I18N_RX=[
+// ---- clock (HUD) ----
+[/^(\S+) (İlkbahar|Yaz|Sonbahar|Kış) · (\d+)\. hafta · (Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar) (\d\d:\d\d)(?: · (🌙 Metrolar kapalı|Yoğun saat|Gece))?(?: · (\S+) (.+))?$/,
+  (m,ic,se,w,d,t,x,eic,en)=>`${ic} ${I18N_EXACT[se]} · Week ${w} · ${I18N_EXACT[d]} ${t}${x?' · '+I18N_EXACT[x]:''}${eic?` · ${eic} ${I18N_EXACT[en]||en}`:''}`],
+// ---- level / chapter HUD ----
+[/^Seviye (\d+)$/,'Level $1'],
+[/^📅 Sv (\d+)$/,'📅 Lv $1'],
+[/^Sv (\d+)$/,'Lv $1'],
+[/^Seviye (\d+) ile açılır$/,'Unlocks at level $1'],
+[/^(\d+)\/(\d+) · Sonraki: (.+)$/,'$1/$2 · Next: $3'],
+[/^Sonraki: (.+)$/,'Next: $1'],
+[/^Bölüm (\d+) · hedef (\d+) · en iyi (\d+)$/,'Chapter $1 · target $2 · best $3'],
+[/^Bölüm (\d+) · hedef (\d+)$/,'Chapter $1 · target $2'],
+[/^Bölüm (\d+) · (.+)$/,'Chapter $1 · $2'],
+[/^Bölüm (\d+)$/,'Chapter $1'],
+[/^(\d+)\. hafta başladı · (\S+) (İlkbahar|Yaz|Sonbahar|Kış)$/,(m,w,ic,s)=>`Week ${w} begins · ${ic} ${I18N_EXACT[s]}`],
+[/^(\d+)\. hafta$/,'Week $1'],
+[/^(\d+) kez$/,'$1 times'],
+[/^%(\d+)$/,'$1%'],
+// ---- inventory / passengers ----
+[/^(\S+) yolcu$/,'$1 passengers'],
+[/^(\d+)\/(\d+) yolcu · (\d+) vagon$/,'$1/$2 passengers · $3 cars'],
+[/^(\d+)\/(\d+) yolcu$/,'$1/$2 passengers'],
+[/^· (.+) yönü$/,'· to $1'],
+// ---- weekly mission HUD ----
+[/^🎯 (\d+) yolcu taşı( · \d+\/\d+)?$/,'🎯 Carry $1 passengers$2'],
+[/^🎯 Su üstünden (\d+) yolcu( · \d+\/\d+)?$/,'🎯 $1 passengers over water$2'],
+[/^🎯 Metrobüsle (\d+) yolcu( · \d+\/\d+)?$/,'🎯 $1 passengers by metrobus$2'],
+[/^🎯 Marmaray'da (\d+) yolcu( · \d+\/\d+)?$/,'🎯 $1 passengers on Marmaray$2'],
+[/^🎯 Gece 00-06 arası (\d+) yolcu( · \d+\/\d+)?$/,'🎯 $1 passengers 00-06 at night$2'],
+// ---- daily tasks (optionally prefixed by "· ") ----
+[/^(· )?Bugün toplam (\d+) yolcu taşı$/,'$1Carry $2 passengers today'],
+[/^(· )?Bugün metrobüsle (\d+) yolcu taşı$/,'$1Carry $2 passengers by metrobus today'],
+[/^(· )?Bugün Boğaz ya da Haliç üzerinden (\d+) yolcu taşı$/,'$1Carry $2 passengers across the Bosphorus or Golden Horn today'],
+[/^(· )?Tek oyunda (\d+) puan topla$/,'$1Score $2 points in one game'],
+[/^(· )?Bugün Marmaray'da (\d+) yolcu taşı$/,'$1Carry $2 passengers on Marmaray today'],
+[/^(· )?Bir oyunda (\d+)\. haftaya ulaş$/,'$1Reach week $2 in one game'],
+[/^(· )?Bugün gece yarısından sonra (\d+) yolcu taşı$/,'$1Carry $2 passengers after midnight today'],
+[/^(· )?Bugün su üzerinden (\d+) yolcu taşı$/,'$1Carry $2 passengers over water today'],
+[/^\+(\d+) jeton · 🔥 (\d+) gün$/,'+$1 coins · 🔥 $2 days'],
+[/^\+(\d+) jeton$/,'+$1 coins'],
+[/^🔥 (\d+) gün$/,'🔥 $1 days'],
+// ---- score board ----
+[/^puan · seviye (\d+) · (\d+)\. hafta$/,'points · level $1 · week $2'],
+[/^(\d+) (Oca|Şub|Mar|Nis|May|Haz|Tem|Ağu|Eyl|Eki|Kas|Ara)(?: · (kolay|zor))?( · bütçe)?$/,
+  (m,d,mo,df,b)=>`${d} ${{Oca:'Jan',Şub:'Feb',Mar:'Mar',Nis:'Apr',May:'May',Haz:'Jun',Tem:'Jul',Ağu:'Aug',Eyl:'Sep',Eki:'Oct',Kas:'Nov',Ara:'Dec'}[mo]}${df?' · '+(df==='kolay'?'easy':'hard'):''}${b?' · budget':''}`],
+[/^★ (\d+)\/(\d+) · (\d+)\/(\d+) bölüm$/,'★ $1/$2 · $3/$4 chapters'],
+[/^(\d+)\/(\d+) başarım$/,'$1/$2 achievements'],
+// ---- intro buttons ----
+[/^(🌅|🌉) (Anadolu Yakası|Avrupa Yakası)( ✓)?(?: · en iyi (\d+))?$/,(m,ic,s,ok,b)=>`${ic} ${I18N_EXACT[s]}${ok||''}${b?' · best '+b:''}`],
+[/^· (\S+) (Sakin gün|Karlı sabah|Kalabalık şehir|Kısıtlı filo|Köprüler serbest|Vagonlu başlangıç|Yağmurlu gün)(?: · en iyi (\d+))?( · 🔥\d+)?$/,(m,ic,n,b,f)=>`· ${ic} ${I18N_EXACT[n]}${b?' · best '+b:''}${f||''}`],
+[/^Devam et · (\d+) puan$/,'Continue · $1 points'],
+// ---- chapter done / game over ----
+[/^(?:Hedefe ulaştın, (?:(\S+) bölümü açıldı\. )?|(\d)\. yıldızı aldın\. )(?:(\d+) jeton kazandın\. )?(?:Sonraki yıldız (\d+) puanda\.|Bu bölümü tamamladın\.)$/,
+  (m,nx,st,g,ns)=>(st?`Star ${st} earned. `:`Target reached${nx?`, chapter ${nx} unlocked`:''}. `)+(g?`You earned ${g} coins. `:'')+(ns?`Next star at ${ns} points.`:'Chapter complete.')],
+[/^puan topladın\. Günün haritasında bugünkü en iyin (\d+)(, yeni günlük rekor! 🎉)?\. Yarın yeni bir harita ve yeni bir kural gelir\. (\d+) jeton kazandın\.$/,
+  (m,b,r,e)=>`points scored. Today's best on the daily map: ${b}${r?', a new daily record! 🎉':''}. A new map and rule arrive tomorrow. You earned ${e} coins.`],
+[/^puan topladın \(hedef (\d+)\)\. (\S+) bölümünde yıldızın: (★+|henüz yok)\. (\d+) jeton kazandın\.$/,
+  (m,t,c,s,e)=>`points scored (target ${t}). Stars in chapter ${c}: ${s==='henüz yok'?'none yet':s}. You earned ${e} coins.`],
+[/^puan topladın, seviye (\d+)'e ulaştın ve (\d+) jeton kazandın\. (?:(Yeni rekor! 🎉)|En iyi puanın: (\d+)\.)(?: Skor tablosunda (\d+)\. sıradasın\.)?$/,
+  (m,l,e,nr,b,r)=>`points scored, reached level ${l} and earned ${e} coins. ${nr?'New record! 🎉':`Your best: ${b}.`}${r?` You're #${r} on the leaderboard.`:''}`],
+[/^(.+) taştı$/,'$1 overflowed'],
+// ---- level-up tags ----
+[/^(.+) · (Banliyö \/ Marmaray|Nostaljik tramvay|Tramvay|Tarihi füniküler|Füniküler|Teleferik|Metrobüs)$/,(m,n,md)=>`${n} · ${I18N_EXACT[md]}`],
+// ---- action panel ----
+[/^· (.+?)( · en fazla (\d+) durak)?( · suyu bedava geçer)?\. Bir istasyondan sürükleyerek bu hattı çiz\.$/,
+  (m,md,x,mx,f)=>`· ${I18N_EXACT[md]||md}${mx?` · max ${mx} stations`:''}${f?' · crosses water free':''}. Drag from a station to draw this line.`],
+[/^· (.+) · (\d+) durak · (\d+) araç · (\d+) vagon ·$/,(m,md,s,t,c)=>`· ${I18N_EXACT[md]||md} · ${s} stations · ${t} trains · ${c} cars ·`],
+[/^\+ Araç \((\d+)\)$/,'+ Train ($1)'],
+[/^\+ Vagon \((\d+)\)$/,'+ Car ($1)'],
+[/^\+ Araç → (.+)$/,'+ Train → $1'],
+[/^\+ Vagon → (.+)$/,'+ Car → $1'],
+[/^🌙 Gece seferi açık \((\d+\/\d+)\)$/,'🌙 Night service on ($1)'],
+[/^🌙 Gece seferi kapalı \((\d+\/\d+)\)$/,'🌙 Night service off ($1)'],
+[/^Geçtiği ilçeler: (.*)$/,'Districts: $1'],
+// ---- settings: voices ----
+[/^Kadın sesi (\d+) · (.+)$/,'Female voice $1 · $2'],
+[/^Erkek sesi (\d+) · (.+)$/,'Male voice $1 · $2'],
+[/^Ses (\d+) · (.+)$/,'Voice $1 · $2'],
+[/^(\d+) Türkçe ses bulundu, kadın sesi otomatik seçilir$/,'$1 Turkish voices found; a female voice is picked automatically'],
+// ---- shop ----
+[/^₺ (\d+) jetonla al$/,'Buy for ₺ $1'],
+[/^(.+) alındı\.$/,(m,n)=>`${I18N_EXACT[n]||n} bought.`],
+// ---- toasts / notes ----
+[/^🏆 (.+) · \+(\d+) jeton$/,(m,n,c)=>`🏆 ${I18N_EXACT[n]||n} · +${c} coins`],
+[/^✅ Günlük görev tamam · \+(\d+) jeton(?: · (\d+) gün üst üste)?$/,(m,c,s)=>`✅ Daily task done · +${c} coins${s?` · ${s}-day streak`:''}`],
+[/^(\S+) (.+) bitti, atlattın · \+(\d+) jeton$/,(m,ic,n,c)=>`${ic} ${I18N_EXACT[n]||n} is over, you made it · +${c} coins`],
+[/^🌙 Gece 00:30: (?:(.+) ve )?metrobüs dışındaki hatlar sabaha kadar kapalı\.$/,(m,o)=>`🌙 00:30: all lines except ${o?o+' and ':''}the metrobus are closed until morning.`],
+[/^🌙 Gece seferleri: 00:30-06:00 arası metrolar kapanır \(cuma ve cumartesi geceleri açık\)\. Metrobüs ve gece seferi verdiğin hatlar \((.+)\) çalışır\. Hattı seçip 🌙 ile değiştirebilirsin\.$/,
+  (m,o)=>`🌙 Night service: metros close 00:30-06:00 (open Friday and Saturday nights). The metrobus and your night lines (${o==='yok'?'none':o}) keep running. Select a line and tap 🌙 to change.`],
+[/^(\S+) bölümü: (\d+) yolcu taşı\. İstasyondan istasyona sürükleyerek hattı kur\.$/,'Chapter $1: carry $2 passengers. Drag from station to station to build the line.'],
+[/^(Anadolu Yakası|Avrupa Yakası): yalnızca bu yakanın hatları\. Puan topladıkça (\d+) hat grubu daha açılacak\.$/,(m,s,n)=>`${I18N_EXACT[s]}: only this side's lines. ${n} more line groups unlock as you score.`],
+[/^📅 Günün haritası: (\S+) ile başla\. (\S+) (.+?): (.+)$/,(m,l,ic,n,d)=>`📅 Daily map: start with ${l}. ${ic} ${I18N_EXACT[n]||n}: ${I18N_EXACT[d]||d}`],
+[/^(\S+) Derbi günü! (.+) çevresine taraftar akını var\.$/,(m,ic,n)=>`${ic} Derby day! Fans flooding around ${n.split(' ve ').join(' and ')}.`],
+[/^(\S+) Bayram yoğunluğu: (.+) tıklım tıklım\.$/,(m,ic,n)=>`${ic} Holiday rush: ${n.split(' ve ').join(' and ')} packed.`],
+[/^(\S+) (\S+) hattında arıza: araçlar bir süre duruyor, yolcuları başka hatta yönlendir\.$/,'$1 Breakdown on $2: trains stopped for a while, reroute passengers.'],
+[/^(\S+) Konser gecesi! (.+) çevresi hıncahınç\.$/,(m,ic,n)=>`${ic} Concert night! Packed around ${n.split(' ve ').join(' and ')}.`],
+[/^(\S+) Fuar haftası: (.+) durağına ziyaretçi akını\.$/,(m,ic,n)=>`${ic} Fair week: visitors flooding ${n.split(' ve ').join(' and ')}.`],
+[/^(\S+) Yoğun sis yüzünden vapurlar iptal\. (.+) iskelelerinden raylara yolcu akıyor\.$/,(m,ic,n)=>`${ic} Ferries cancelled due to fog. Passengers pour from ${n.split(' ve ').join(' and ')} piers onto the rails.`],
+[/^(\S+) Yılbaşı gecesi! (.+) çevresinde kutlama kalabalığı\.$/,(m,ic,n)=>`${ic} New Year's Eve! Party crowds around ${n.split(' ve ').join(' and ')}.`],
+[/^⚠ (.+) dolmak üzere! Bu durağa araç ya da hat ekle\.$/,'⚠ $1 is almost full! Add a train or line here.'],
+[/^⚠ (\S+) arızalı$/,'⚠ $1 broken down'],
+[/^(\S+) (nostaljik tramvay|tarihi füniküler|füniküler|teleferik|metro|tramvay|metrobüs|banliyö \/ marmaray) hattı en fazla (\d+) durak olabilir\.$/,
+  (m,l,md,n)=>`${l} ${{'nostaljik tramvay':'historic tram','tarihi füniküler':'historic funicular','füniküler':'funicular','teleferik':'cable car','metro':'metro','tramvay':'tram','metrobüs':'metrobus','banliyö / marmaray':'suburban'}[md]} line: max ${n} stations.`],
+[/^(\S+) çizildi ama depoda araç yok\. Seviye ya da hafta ödülüyle araç gelince ekle\.$/,'$1 drawn, but the depot is empty. Add a train when a level or weekly reward brings one.'],
+[/^(.+) zaten (\S+) hattında\.$/,'$1 is already on $2.'],
+[/^(\S+) gece 00:30-06:00 arası kapalı olacak\.$/,'$1 will be closed 00:30-06:00.'],
+[/^Gece seferi hakkın dolu \((\d+)\)\. Önce başka bir hattın gece seferini kapat\. Her iki haftada bir hak artar\.$/,'Night service slots full ($1). Turn off another line\'s night service first. You get a new slot every two weeks.'],
+[/^(\S+) artık bütün gece çalışacak\.$/,'$1 will now run all night.'],
+[/^(\S+) son değişiklikten önceki hâline döndü\.$/,'$1 reverted to before the last change.'],
+[/^(\S+) kaldırıldı\. Araçları depoya döndü\.$/,'$1 removed. Its trains returned to the depot.'],
+[/^(\S+) hattına araç eklendi\.$/,'Train added to $1.'],
+[/^(\S+) hattına vagon takıldı\.$/,'Car added to $1.'],
+[/^Önce (\S+) bölümünü tamamla \(1 yıldız\)\.$/,'First complete chapter $1 (1 star).'],
+// ---- v4.0 ----
+[/^Raylı İstanbul · sürüm ([\d.]+) · Metrobüs motor sesi: Egemen'in Altunizade kaydı ·$/,"Raylı İstanbul · version $1 · Metrobus engine sound: Egemen's Altunizade recording ·"],
+[/^(\d+)\. gün$/,'Day $1'],
+[/^Yarın gelirsen (\d+) jeton\. 7 gün üst üste gel, özel görünüm kazan\.$/,'Come back tomorrow for $1 coins. Play 7 days in a row to win a special skin.'],
+[/^🎁 Günlük ödül · \+(\d+) jeton · (\d+) gün üst üste$/,'🎁 Daily reward · +$1 coins · $2-day streak'],
+[/^🎁 Günlük ödül · \+(\d+) jeton$/,'🎁 Daily reward · +$1 coins'],
+[/^🔒︎? (.+)$/,(m,h)=>I18N_EXACT[h]?m.replace(h,I18N_EXACT[h]):m],
+[/^🏗 (\S+) \((.+)\) inşaatta: (\d+) gün sonra hizmete açılır\. Alttaki 🏗 düğmesinden jetonla hızlandırabilirsin\.$/,
+  (m,l,n,d)=>`🏗 ${l} (${I18N_EXACT[n]||n}) under construction: opens in ${d} day${d==='1'?'':'s'}. Speed it up with coins via the 🏗 button below.`],
+[/^🏗 (\S+) inşaatta, (\d+) gün sonra açılır\. Hemen bitirmek için (\d+) jetonla yeniden dokun\.$/,
+  (m,l,d,c)=>`🏗 ${l} under construction, opens in ${d} day${d==='1'?'':'s'}. Tap again to finish now for ${c} coins.`],
+[/^🎉 (\S+) hizmete açıldı! Çevresinde yolcu artıyor · \+(\d+) jeton$/,'🎉 $1 is open! Ridership around it is rising · +$2 coins'],
+[/^İnşaatı bitirmek için (\d+) jeton gerekir\.$/,'You need $1 coins to finish construction.'],
+[/^💰 Kasada yeterli para yok: (yeni araç|vagon) (\d+) ₺ tutar, kasada (-?[\d.]+) ₺ var\.$/,
+  (m,w,c,h)=>`💰 Not enough money: a ${w==='vagon'?'car':'new train'} costs ${c} ₺, you have ${h} ₺.`],
+[/^💰 Kasa eksiye düştü \((-?[\d.]+) ₺\)\. (\d+) gün içinde düzelmezse iflas edersin: araç kaldır ya da daha çok yolcu taşı\.$/,
+  (m,v,d)=>`💰 Cash is negative (${v} ₺). Recover within ${d} day${d==='1'?'':'s'} or go bankrupt: remove trains or carry more passengers.`],
+[/^💰 Bütçe modu: kasada (-?[\d.]+) ₺ var\. Hat, araç ve vagon para tutar; her yolcu (\d+) ₺ bilet parası getirir\. Her gün işletme gideri ödenir\.$/,
+  '💰 Budget mode: you have $1 ₺. Lines, trains and cars cost money; each passenger pays a $2 ₺ fare. Running costs are charged daily.'],
+[/^(\S+) Memnuniyet %(\d+) · puan ×([\d,]+)(?: · 💰 (-?[\d.]+) ₺(?: \(dün \+(-?[\d.,]+) \/ −(-?[\d.,]+)\))?)?(?: · 🏗 (.+))?$/,
+  (m,f,s,x,mo,inc,c,b)=>`${f} Satisfaction ${s}% · points ×${x.replace(',','.')}${mo!=null?` · 💰 ${mo} ₺${inc!=null?` (yesterday +${inc} / −${c})`:''}`:''}${b?' · 🏗 '+b.replace(/ (\d+) gün/g,' $1d'):''}`],
+[/^(\S+) Cumhuriyet Bayramı kutlu olsun! (.+) çevresinde fener alayı kalabalığı\.$/,(m,ic,n)=>`${ic} Happy Republic Day! Lantern parade crowds around ${n.split(' ve ').join(' and ')}.`],
+[/^(\S+) (Cumhuriyet Bayramı|İstanbul Maratonu|Yılbaşı|Ramazan|Ramazan Bayramı|Kurban Bayramı|Lale Festivali|23 Nisan)$/,(m,ic,n)=>`${ic} ${I18N_EXACT[n]}`],
+[/^Yaklaşan etkinlik: (\S+) (.+)$/,(m,ic,n)=>`Upcoming event: ${ic} ${I18N_EXACT[n]||n}`],
+[/^· (.+) tarihine kadar$/,'· until $1'],
+[/^(.+) · (\d+) gün sonra$/,(m,d,n)=>`${d} · in ${n} day${n==='1'?'':'s'}`],
+[/^(.+) Jetonlar 1,5 kat\.$/,(m,d)=>`${I18N_EXACT[d]||d} Coins ×1.5.`],
+[/^✓ (.+) görünümü sende$/,(m,n)=>`✓ You own the ${I18N_EXACT[n]||n} skin`],
+[/^Bir oyunda 100 puana ulaş: (.+) görünümü$/,(m,n)=>`Reach 100 points in a game: ${I18N_EXACT[n]||n} skin`],
+[/^(\S+) (.+) ödülü: (.+) görünümü kazandın! Mağazadan seçebilirsin\.$/,(m,ic,n,k)=>`${ic} ${I18N_EXACT[n]||n} reward: you earned the ${I18N_EXACT[k]||k} skin! Pick it in the shop.`],
+[/^(\d+) jeton$/,'$1 coins'],
+[/^₺ (\d+) jeton eklendi\. Teşekkürler!$/,'₺ $1 coins added. Thank you!'],
+[/^Kişi başı toplam harcama sınırı (\d+) TL\. Kalan: (\d+) TL\.( Mağaza bilgisi yükleniyor…)?$/,(m,c,l,ld)=>`Spending limit per person: ${c} TL. Remaining: ${l} TL.${ld?' Loading store info…':''}`],
+[/^Kişi başı (\d+) TL harcama sınırına ulaştın\.$/,"You've reached the $1 TL spending limit."],
+// ---- canvas: photo footer ----
+[/^(\d+) puan · (\d+)\. hafta · (\d+) hat · (\d+) durak · Günün haritası$/,'$1 points · week $2 · $3 lines · $4 stations · Daily map'],
+[/^(\d+) puan · (\d+)\. hafta · (\d+) hat · (\d+) durak$/,'$1 points · week $2 · $3 lines · $4 stations'],
+// ---- generic (keep last) ----
+[/^(.+) taşıyor$/,'$1 is overflowing']
+];
+// ---------- 4.0: memnuniyet, inşaat, bütçe, takvim etkinlikleri, giriş ödülü, uygulama içi satın alma, dil ----------
+// Yolcu memnuniyeti: duraklardaki bekleme ve kalabalıktan hesaplanır (0-100). Bölümler dışında puanı çarpar.
+const satOn=()=>G&&!G.chap;
+const satMul=()=>{const s=G.sat??80;return s>=80?1.25:s>=50?1:s>=30?.8:.6};
+function satTick(dt){let n=0,f=0,c=0;for(const s of G.st){if(!s.revealed)continue;n++;f+=Math.min(1,s.queue.length/QMAX);c+=s.crowd}
+  if(!n)return;const target=Math.max(0,Math.min(100,100-110*f/n-90*c/n));G.sat=(G.sat??80)+(target-(G.sat??80))*Math.min(1,dt*.12)}
+// İnşaat projeleri: gerçekte yapımı süren hatlar Oyna modunda açıldıklarında bir süre inşaatta bekler, açılınca çevreleri canlanır
+const BUILDS={M12:'Göztepe – Ümraniye',M7:'Esenyurt uzatması'},BUILD_T=DAY*4,BUILD_FAST=40;
+const buildOn=()=>G&&!G.chap&&!G.region&&!G.daily;
+function unlockOrBuild(ids){const now=[],later=[];for(const id of ids)(buildOn()&&BUILDS[id]&&!(G.build||{})[id]?later:now).push(id);
+  unlock(now);G.build=G.build||{};for(const id of later)G.build[id]=G.t+BUILD_T;return later}
+function buildLeft(id){return Math.max(0,((G.build||{})[id]||0)-G.t)}
+const buildDays=id=>Math.max(1,Math.ceil(buildLeft(id)/DAY));
+function openBuild(id){delete G.build[id];unlock([id]);const L=lineById(id);
+  const cands=G.st.filter(s=>s.inPool&&!s.revealed&&s.lines.includes(id));for(const s of nearestToRevealed(cands,3))reveal(s);network();
+  G.boost={line:id,until:G.t+DAY*1.5,st:LINEDEF[id].seq};P.coins+=15;G.earned+=15;persist();
+  toast(`🎉 ${LABEL(id)} hizmete açıldı! Çevresinde yolcu artıyor · +15 jeton`);vib([40,40,120]);lastBar='';ST.build=(ST.build||0)+1;save('mi-stat',ST);checkAch()}
+function speedBuild(id){if(P.coins<BUILD_FAST){toast(`İnşaatı bitirmek için ${BUILD_FAST} jeton gerekir.`);return}
+  P.coins-=BUILD_FAST;persist();openBuild(id);hud(true)}
+// Bütçe modu: hat, araç ve vagon para tutar, yolcu bilet parası getirir, günlük işletme gideri var
+const FARE=8,COST={train:100,car:40},KM={subway:12,suburban_rail:5,tram:6,heritage_tram:5,funicular:8,heritage_funicular:8,cable_car:8,brt:3},WATER=80;
+function infraValue(){let v=0;for(const L of G.lines)for(let k=1;k<L.st.length;k++){const a=L.st[k-1],b=L.st[k];
+  v+=Math.hypot(b.x-a.x,b.y-a.y)*(KM[L.mode]||8)+segCost(L,a,b)*WATER}return Math.round(v)}
+function infraCharge(){const v=infraValue(),d=v-(G.infraPaid||0);if(!d)return;G.money-=d;G.infraPaid=v;if(d>0&&G.t>1)moneyFx(-d)}
+function spend(c,what){if(!G.budget)return true;if(G.money<c){toast(`💰 Kasada yeterli para yok: ${what} ${c} ₺ tutar, kasada ${fmtMoney(G.money)} var.`);return false}
+  G.money-=c;moneyFx(-c);return true}
+const fmtMoney=v=>Math.round(v).toLocaleString('tr-TR')+' ₺';
+let moneyLast=0;function moneyFx(d){moneyLast=d}
+function dailyCost(){let tr=0,cars=0,km=0;for(const L of G.lines){tr+=L.trains.length;cars+=L.trains.reduce((a,t)=>a+t.cars,0);
+  for(let k=1;k<L.st.length;k++)km+=Math.hypot(L.st[k].x-L.st[k-1].x,L.st[k].y-L.st[k-1].y)}return Math.round(tr*8+cars*2+km*.3)}
+function budgetDay(){const c=dailyCost(),inc=G.dayInc||0;G.money-=c;G.lastDay={inc,c};G.dayInc=0;
+  if(G.money<0){G.debtDays=(G.debtDays||0)+1;
+    if(G.debtDays>=3||G.money<-1500){const s=G.st.filter(s=>s.revealed).sort((a,b)=>b.queue.length-a.queue.length)[0];G.bankrupt=true;endWith(s);return}
+    toast(`💰 Kasa eksiye düştü (${fmtMoney(G.money)}). ${3-G.debtDays} gün içinde düzelmezse iflas edersin: araç kaldır ya da daha çok yolcu taşı.`);vib([60,60,60])}
+  else G.debtDays=0}
+function startBudget(){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro','#pauseMenu'])$(m).hidden=true;clearSave();
+  newGame();G.budget=true;G.money=1000;G.infraPaid=0;G.dayInc=0;G.debtDays=0;G.payDay=0;G.paused=false;hud(true);
+  toast(`💰 Bütçe modu: kasada ${fmtMoney(G.money)} var. Hat, araç ve vagon para tutar; her yolcu ${FARE} ₺ bilet parası getirir. Her gün işletme gideri ödenir.`)}
+// Takvim etkinlikleri: gerçek tarihlere göre (cihazın saati). Etkinlikte jetonlar 1,5 kat; 100 puana ulaşınca özel görünüm.
+const LIVE=[
+  {k:'cumhuriyet',ic:'🇹🇷',n:'Cumhuriyet Bayramı',from:'10-26',to:'11-01',ev:'cumhuriyet',skin:'bayrak',d:'Taksim, Kadıköy ve Yenikapı\'da kutlama kalabalığı.'},
+  {k:'maraton',ic:'🏃',n:'İstanbul Maratonu',from:'11-05',to:'11-10',ev:'maraton',d:'Metrobüs koşu günü yavaş ilerler.'},
+  {k:'yilbasi',ic:'🎄',n:'Yılbaşı',from:'12-20',to:'01-02',ev:'yilbasi',skin:'yilbasi',d:'Taksim ve Kadıköy\'de yılbaşı kalabalığı.'},
+  {k:'ramazan',ic:'🌙',n:'Ramazan',dates:[['2027-02-08','2027-03-08'],['2028-01-28','2028-02-25'],['2029-01-16','2029-02-13']],skin:'ramazan',d:'İftar saatinde (18:30-20:30) bütün duraklar daha kalabalık.'},
+  {k:'rbayram',ic:'🍬',n:'Ramazan Bayramı',dates:[['2027-03-09','2027-03-11'],['2028-02-26','2028-02-28'],['2029-02-14','2029-02-16']],ev:'bayram',d:'Otogar ve havalimanlarına bayram akını.'},
+  {k:'kbayram',ic:'🐑',n:'Kurban Bayramı',dates:[['2027-05-16','2027-05-19'],['2028-05-04','2028-05-07'],['2029-04-23','2029-04-26']],ev:'bayram',d:'Otogar ve havalimanlarına bayram akını.'},
+  {k:'lale',ic:'🌷',n:'Lale Festivali',from:'04-05',to:'04-25',skin:'lale',d:'Emirgan\'da laleler açtı. Lale görünümü bu etkinlikte bedava.'},
+  {k:'23nisan',ic:'🎈',n:'23 Nisan',from:'04-23',to:'04-23',d:'Ulusal Egemenlik ve Çocuk Bayramı kutlu olsun!'},
+];
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function liveRange(e,now){const y=now.getFullYear();
+  if(e.dates)return e.dates.map(([a,b])=>[a,b]);
+  const r=[];for(const yy of [y-1,y,y+1]){const a=yy+'-'+e.from,b=(e.to<e.from?yy+1:yy)+'-'+e.to;r.push([a,b])}return r}
+let liveCache={d:'',now:null,next:null};
+function liveInfo(){const now=new Date(),t=ymd(now);if(liveCache.d===t)return liveCache;let cur=null,next=null,nd='9999';
+  for(const e of LIVE)for(const [a,b] of liveRange(e,now)){if(a<=t&&t<=b&&!cur)cur=Object.assign({end:b},e);else if(a>t&&a<nd){nd=a;next=Object.assign({start:a},e)}}
+  return liveCache={d:t,now:cur,next}}
+const liveNow=()=>liveInfo().now,liveMul=()=>liveNow()?1.5:1;
+const liveForces=k=>{const e=liveNow();return !!e&&e.ev===k};
+const liveRush=h=>{const e=liveNow();return e&&e.k==='ramazan'&&h>=18.5&&h<20.5?1.4:1};
+const dateTr=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(CFG.lang==='en'?'en-GB':'tr-TR',{day:'numeric',month:'long'})};
+function liveGoal(){const e=liveNow();if(!e||!e.skin||P.owned.includes(e.skin)||!G||G.chap||G.score<100)return;
+  P.owned.push(e.skin);persist();const sk=SKINS.find(s=>s.id===e.skin);note(`${e.ic} ${e.n} ödülü: ${sk?sk.name:''} görünümü kazandın! Mağazadan seçebilirsin.`);vib([40,40,120])}
+function renderLive(){const el=$('#liveBox');if(!el)return;const {now,next}=liveInfo();
+  if(now){const sk=now.skin&&SKINS.find(s=>s.id===now.skin),got=sk&&P.owned.includes(sk.id);
+    el.innerHTML=`<b>${now.ic} ${esc(now.n)}</b> · ${esc(dateTr(now.end))} tarihine kadar<div class="r"><span>${esc(now.d)} Jetonlar 1,5 kat.</span></div>${sk?`<div class="r"><span>${got?`✓ ${esc(sk.name)} görünümü sende`:`Bir oyunda 100 puana ulaş: ${esc(sk.name)} görünümü`}</span></div>`:''}`;el.hidden=false}
+  else if(next){const days=Math.round((new Date(next.start)-new Date(ymd(new Date())))/864e5);
+    if(days<=21){el.innerHTML=`<b>Yaklaşan etkinlik: ${next.ic} ${esc(next.n)}</b><div class="r"><span>${esc(dateTr(next.start))} · ${days} gün sonra</span></div>`;el.hidden=false}else el.hidden=true}
+  else el.hidden=true}
+// Günlük giriş ödülü: her gün oyunu açınca jeton, üst üste 7. gün özel görünüm
+const LOGIN_R=[10,15,20,25,30,40,50];
+let LOGIN=Object.assign({last:'',streak:0},load('mi-login',{}));
+function loginDue(){return LOGIN.last!==dayKey()}
+function loginOpen(){if(!loginDue())return false;const st=LOGIN.last===dayKey(-1)?LOGIN.streak%7+1:1;G.paused=true;
+  $('#loginTitle').textContent=`${st}. gün`;
+  $('#loginDays').innerHTML=LOGIN_R.map((c,k)=>`<div class="${k+1<st?'got':k+1===st?'now':''}"><span>${k+1}. gün</span><b>${k===6?'🎁':'₺'}</b><i>${k===6?(P.owned.includes('seri')?'+75':'+50 🚇'):'+'+c}</i></div>`).join('');
+  $('#loginText').textContent=st===7?(P.owned.includes('seri')?'Yedinci gün! 75 jeton seni bekliyor.':'Yedinci gün! 50 jeton ve sadece seriyle kazanılan Seri ateşi görünümü.'):
+    `Yarın gelirsen ${LOGIN_R[st]} jeton. 7 gün üst üste gel, özel görünüm kazan.`;
+  $('#btnLoginClaim').dataset.st=st;$('#loginModal').hidden=false;hud(true);return true}
+$('#btnLoginClaim').onclick=()=>{const st=+$('#btnLoginClaim').dataset.st||1;let c=LOGIN_R[st-1];
+  if(st===7){if(P.owned.includes('seri'))c=75;else{P.owned.push('seri');note('🔥 Seri ateşi görünümü kazandın! Mağazadan seçebilirsin.')}}
+  P.coins+=c;LOGIN={last:dayKey(),streak:st};save('mi-login',LOGIN);persist();$('#loginModal').hidden=true;note(`🎁 Günlük ödül · +${c} jeton`+(st>1?` · ${st} gün üst üste`:''));vib([30,40,30]);hud(true)};
+// Uygulama içi satın alma. Android: AndroidTTS.billing*, iPhone: webkit shell iap*; web sürümünde satış yok.
+// Kişi başı toplam harcama 100 TL ile sınırlı (cihazda tutulur, fiyatlar mağazadan gelir).
+const IAP=[{id:'jeton_300',c:300,n:'300 jeton',d:'Görünüm almak için jeton paketi.'},{id:'jeton_1000',c:1000,n:'1000 jeton',d:'Bütün görünümlere yetecek büyük paket.'},
+  {id:'destekci',c:0,once:true,n:'Reklamsız + destekçi',d:'Oyun bittiğinde reklam izlemeden devam edersin, Destekçi görünümü gelir ve Maelstrom Studio\'ya destek olursun.'}];
+const IAP_CAP=100,FX={TRY:1,USD:42,EUR:49,GBP:56};
+P.spent=load('mi-spent',0);P.adfree=load('mi-adfree',false);
+const BILL={prods:{},asked:false,busy:''};
+const iosIap=()=>!!(window.__iapNative&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.shell);
+const andIap=()=>{try{return !!(window.AndroidTTS&&AndroidTTS.billingReady&&AndroidTTS.billingReady())}catch(e){return false}};
+const andHasIap=()=>!!(window.AndroidTTS&&AndroidTTS.billingBuy);
+const iapPlatform=()=>iosIap()||andHasIap();
+function iapCall(op,arg){try{if(iosIap()){webkit.messageHandlers.shell.postMessage(Object.assign({op},arg||{}));return true}
+  if(window.AndroidTTS){if(op==='iapProducts'&&AndroidTTS.billingProducts){AndroidTTS.billingProducts(JSON.stringify(arg.ids));return true}
+    if(op==='iapBuy'&&AndroidTTS.billingBuy){AndroidTTS.billingBuy(arg.id);return true}if(op==='iapRestore'&&AndroidTTS.billingRestore){AndroidTTS.billingRestore();return true}}}catch(e){}return false}
+const priceTL=p=>p&&p.micros?p.micros/1e6*(FX[p.currency]||45):0;
+function grantAdfree(){if(!P.adfree){P.adfree=true;save('mi-adfree',true)}if(!P.owned.includes('destek')){P.owned.push('destek');persist()}}
+window.__billing={
+  products(list){try{if(typeof list==='string')list=JSON.parse(list)}catch(e){list=[]}for(const p of list||[])BILL.prods[p.id]=p;if(!$('#shopModal').hidden)renderIap()},
+  purchased(id,ok,info){BILL.busy='';const it=IAP.find(x=>x.id===id);
+    if(ok&&it){const p=BILL.prods[id];if(info!=='restore'||!it.once){P.spent=Math.round((P.spent+priceTL(p))*100)/100;save('mi-spent',P.spent)}
+      if(it.once)grantAdfree();else{P.coins+=it.c;persist()}
+      toast(it.once?'💛 Teşekkürler! Reklamsız devam ve Destekçi görünümü açıldı.':`₺ ${it.c} jeton eklendi. Teşekkürler!`);vib([30,40,30])}
+    else if(info==='pending')toast('Ödeme onay bekliyor. Onaylanınca paket kendiliğinden gelir.');
+    else if(info&&info!=='cancel')toast('Satın alma tamamlanamadı. Daha sonra yeniden dene.');
+    hud(true);if(!$('#shopModal').hidden)renderShop()},
+  owned(ids){try{if(typeof ids==='string')ids=JSON.parse(ids)}catch(e){ids=[]}if((ids||[]).includes('destekci')){const had=P.adfree;grantAdfree();if(!had)toast('Destekçi paketin geri yüklendi.');if(!$('#shopModal').hidden)renderShop()}}};
+function iapAsk(){if(BILL.asked||!iapPlatform())return;if(andHasIap()&&!andIap())return;BILL.asked=true;iapCall('iapProducts',{ids:IAP.map(x=>x.id)})}
+function renderIap(){const el=$('#iapBox');if(!el)return;$('#rowRestore').hidden=!iapPlatform();
+  if(!iapPlatform()){el.innerHTML='<strong>Gerçek parayla paketler.</strong> Jeton paketleri ve reklamsız destekçi paketi Google Play ve App Store uygulamasında satılır. Bu web sürümünde ödeme alınmıyor.';return}
+  iapAsk();const left=Math.max(0,IAP_CAP-P.spent);
+  const rows=IAP.map(it=>{const p=BILL.prods[it.id],own=it.once&&P.adfree,tl=priceTL(p),over=!own&&p&&tl>left+.01;
+    return `<div class="iap"><div><b>${esc(it.n)}</b><span>${esc(it.d)}</span></div><button class="chip${own?'':' buy'}" data-iap="${it.id}" ${own||!p||over||BILL.busy?'aria-disabled="true"':''}>${own?'✓ Sende':!p?'…':esc(p.price)}</button></div>`}).join('');
+  el.innerHTML=`<strong>Paketler</strong>${rows}<p class="muted" style="margin:8px 0 0;font-size:12px">Kişi başı toplam harcama sınırı ${IAP_CAP} TL. Kalan: ${Math.floor(left)} TL.${Object.keys(BILL.prods).length?'':' Mağaza bilgisi yükleniyor…'}</p>`}
+$('#shopModal').addEventListener('click',e=>{const b=e.target.closest('[data-iap]');if(!b)return;const id=b.dataset.iap,it=IAP.find(x=>x.id===id),p=BILL.prods[id];
+  if(it.once&&P.adfree)return;if(!p){toast('Mağaza bilgisi henüz gelmedi, biraz sonra dene.');return}
+  if(priceTL(p)>IAP_CAP-P.spent+.01){toast(`Kişi başı ${IAP_CAP} TL harcama sınırına ulaştın.`);return}
+  if(BILL.busy)return;BILL.busy=id;if(!iapCall('iapBuy',{id})){BILL.busy='';toast('Satın alma şu an açılamadı.')}renderIap()});
+$('#btnRestore').onclick=()=>{if(iapCall('iapRestore'))toast('Satın alımlar kontrol ediliyor…')};
+// Dil: Türkçe ya da İngilizce. Arayüz metinleri sayfadaki yazılar değiştikçe sözlükten çevrilir; durak adları çevrilmez.
+const I18N_MAP=new Map(Object.entries(I18N_EXACT));const trCache=new Map();
+function tr(s){if(CFG.lang!=='en'||!s)return s;const k=String(s).replace(/\s+/g,' ').trim();if(!k)return s;let r=trCache.get(k);
+  if(r===undefined){r=I18N_MAP.get(k);if(r==null){for(const [re,rep] of I18N_RX)if(re.test(k)){r=k.replace(re,rep);break}}if(r==null)r=null;if(trCache.size>4000)trCache.clear();trCache.set(k,r)}
+  if(r==null)return s;const m=String(s);return m.match(/^\s*/)[0]+r+m.match(/\s*$/)[0]}
+const TR_ATTR=['title','aria-label','placeholder'];
+function trNode(n){if(n.nodeType===3){const p=n.parentNode;if(!p||p.nodeName==='SCRIPT'||p.nodeName==='STYLE')return;
+    if(n.__o!==undefined&&n.data===n.__t)return;n.__o=n.data;const t=tr(n.data);n.__t=t;if(t!==n.data)n.data=t;return}
+  if(n.nodeType!==1||n.nodeName==='SCRIPT'||n.nodeName==='STYLE'||n.nodeName==='CANVAS')return;trAttrs(n);
+  for(let c=n.firstChild;c;c=c.nextSibling)trNode(c)}
+function trAttrs(el){for(const a of TR_ATTR){const v=el.getAttribute(a);if(v==null)continue;el.__ta=el.__ta||{};const s=el.__ta[a];
+  if(s&&s.t===v)continue;const t=tr(v);el.__ta[a]={o:v,t};if(t!==v)el.setAttribute(a,t)}}
+function untrNode(n){if(n.nodeType===3){if(n.__o!==undefined&&n.data===n.__t)n.data=n.__o;n.__o=undefined;return}
+  if(n.nodeType!==1)return;if(n.__ta)for(const a in n.__ta){if(n.getAttribute(a)===n.__ta[a].t)n.setAttribute(a,n.__ta[a].o)}n.__ta=null;for(let c=n.firstChild;c;c=c.nextSibling)untrNode(c)}
+const trObs=new MutationObserver(ms=>{if(CFG.lang!=='en')return;for(const m of ms){
+  if(m.type==='characterData')trNode(m.target);else if(m.type==='attributes')trAttrs(m.target);else for(const n of m.addedNodes)trNode(n)}});
+const TITLE0=document.title;
+function applyLang(){document.documentElement.lang=CFG.lang==='en'?'en':'tr';trCache.clear();MC=null;lastBar='';
+  if(CFG.lang==='en'){trNode(document.body);document.title=tr(TITLE0);trObs.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:TR_ATTR})}
+  else{trObs.disconnect();untrNode(document.body);document.title=TITLE0}}
+// Eski telefonlar: oyun oynanırken kareler sürekli yavaşsa (Dengeli modda) bir kez kendiliğinden Pil moduna geçilir
+const PERF={t:0,n:0,sum:0};
+function perfTick(rdt,active){if(!active||CFG.gfx!=='denge'||CFG.gfxAuto)return;PERF.t+=rdt;PERF.n++;PERF.sum+=rdt;
+  if(PERF.t<6)return;const avg=PERF.sum/PERF.n;PERF.t=PERF.n=PERF.sum=0;
+  if(avg>1/28){CFG.gfx='pil';CFG.gfxAuto=true;saveCfg();resize();MC=null;toast('Telefonun zorlandığı için grafik Pil moduna alındı, oyun daha akıcı. Ayarlar > Grafik\'ten değiştirebilirsin.')}}
+// Alt satır: memnuniyet ve (bütçe modunda) kasa
+function hudEcon(){const el=$('#econ');if(!el)return;if(!satOn()){el.hidden=true;return}
+  const s=Math.round(G.sat??80),m=satMul(),face=s>=80?'😊':s>=50?'🙂':s>=30?'😐':'😠';
+  let h=`${face} Memnuniyet %${s} · puan ×${String(m).replace('.',',')}`;
+  if(G.budget)h+=` · 💰 ${fmtMoney(G.money)}${G.lastDay?` (dün +${G.lastDay.inc} / −${G.lastDay.c})`:''}`;
+  const bl=Object.keys(G.build||{});if(bl.length)h+=` · 🏗 ${bl.map(id=>LABEL(id)+' '+buildDays(id)+' gün').join(', ')}`;
+  el.hidden=false;el.classList.toggle('bad',s<50||(G.budget&&G.money<0));if(el.textContent!==h)el.textContent=h}
+function econTick(dt){if(satOn())satTick(dt);
+  for(const id of Object.keys(G.build||{}))if(G.t>=G.build[id])openBuild(id);
+  if(G.boost&&G.t>=G.boost.until)G.boost=null;
+  if(G.budget){const d=dayOf(G.t);if(G.payDay==null)G.payDay=d;if(d!==G.payDay){G.payDay=d;budgetDay()}}}
 
 // ---------- Başlat ----------
 readTokens();
@@ -1809,7 +2562,9 @@ function appHidden(h){
 window.__appHidden=appHidden;
 document.addEventListener('visibilitychange',()=>appHidden(document.hidden));
 setSound(SND.on);applyTheme();$('#btnReal').setAttribute('aria-pressed',String(showReal));
-newGame();hud(true);renderDaily();renderAchCount();setTimeout(checkAch,500);
+newGame();hud(true);renderDaily();renderLive();renderAchCount();setTimeout(checkAch,500);
+if(CFG.lang==='en')applyLang();
+loginOpen();setTimeout(iapAsk,3000);setTimeout(iapAsk,12000);
 // Açılış animasyonu: dokununca geçer, yoksa ~3,4 sn sonra kaybolur
 (function(){const sp=$('#splash');if(!sp)return;let done=false;
   const end=()=>{if(done)return;done=true;sp.classList.add('out');setTimeout(()=>sp.remove(),650)};
@@ -1822,7 +2577,7 @@ function frame(now){const rdt=Math.min(.05,(now-last)/1000);last=now;
   // Performans: duraklatılmışken (dokunma yoksa) saniyede 4 kare, pil modunda 30 kare/sn çiz
   drawAcc+=rdt;const busy=drag||pinch||ptrs.size>0,idle=(G.paused||G.modal||G.over)&&!busy;
   if(idle?drawAcc>=.25:CFG.gfx!=='pil'||drawAcc>=1/32){drawAcc=0;draw()}
-  humTick(rdt);hudT+=rdt;if(hudT>.12){hudT=0;hud();if(vSel)renderVinfo()}
+  perfTick(rdt,!idle);humTick(rdt);hudT+=rdt;if(hudT>.12){hudT=0;hud();if(vSel)renderVinfo()}
   requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 })();
