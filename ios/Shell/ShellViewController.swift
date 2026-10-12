@@ -22,6 +22,8 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
     let location = ShellLocation()
     private var reminders: ShellReminders?
     private var askedReminders = false
+    /// Uygulama içi satın alma; sayfa ilk iap* isteğini gönderene kadar oluşturulmaz (StoreKit'e dokunulmaz).
+    private var store: ShellStore?
 
     override var preferredStatusBarStyle: UIStatusBarStyle {
         config.autoStatusBar ? .default : (config.lightStatusBar ? .lightContent : .darkContent)
@@ -97,7 +99,7 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
           var ce = console.error; console.error = function () { send('console', arguments); return ce.apply(console, arguments); };
           window.addEventListener('DOMContentLoaded', function () { send('hazır', [location.href, document.title]); });
         })();
-        """]
+        """, "window.__iapNative = true;"]
         // Sayfa iki parmakla büyümesin: yakınlaştırmayı sayfanın kendisi (ör. harita) yapsın
         let css = config.extraCSS.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "`", with: "\\`")
         list.append("""
@@ -261,6 +263,9 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
             if let id = body["id"] as? Int { location.request(id) }
         case "log":
             NSLog("[kabuk] %@", body["text"] as? String ?? "")
+        case "iapProducts", "iapBuy", "iapRestore":
+            if store == nil { store = ShellStore(web: web) }
+            store?.handle(op, body)
         default:
             break
         }

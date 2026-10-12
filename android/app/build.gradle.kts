@@ -103,8 +103,8 @@ android {
         applicationId = "io.github.maelstoorm.metroistanbul"
         minSdk = 24
         targetSdk = 36
-        versionCode = 41
-        versionName = "3.9.1"
+        versionCode = 42
+        versionName = "4.0"
         manifestPlaceholders["admobAppId"] = admobAppId
         buildConfigField("String", "ADMOB_REWARDED_ID", "\"$admobRewardedId\"")
     }
@@ -147,4 +147,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:25.5.0")
     implementation("com.google.android.ump:user-messaging-platform:4.0.0")
     implementation("androidx.webkit:webkit:1.12.1")
+    implementation("com.android.billingclient:billing:8.3.0")
 }
