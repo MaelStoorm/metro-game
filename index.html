@@ -2658,7 +2658,8 @@ function afterOver(){const t=$('#overText');
       :`puan topladın. Kodu skorunla arkadaşına gönder, aynı haritada seni geçmeye çalışsın.`;}
   $('#btnShareChal').hidden=!G.chal;overOnline();
   const of=$('#overOffer'),it=IAP.find(x=>x.id==='baslangic'),p=BILL.prods.baslangic;
-  of.hidden=!(iapPlatform()&&p&&!P.iap.baslangic&&(ST.games||0)>=2);if(!of.hidden)of.innerHTML=`🎁 <b>Başlangıç paketi</b>: ${esc(it.d)} <button class="chip buy" data-iap="baslangic">${esc(p.price)}</button>`}
+  const day=new Date().toDateString();let seen='';try{seen=localStorage.getItem('mi-offer')||''}catch(e){}
+  of.hidden=!(iapPlatform()&&p&&!P.iap.baslangic&&(ST.games||0)>=2&&seen!==day);if(!of.hidden){try{localStorage.setItem('mi-offer',day)}catch(e){}}if(!of.hidden)of.innerHTML=`🎁 <b>Başlangıç paketi</b>: ${esc(it.d)} <button class="chip buy" data-iap="baslangic">${esc(p.price)}</button>`}
 $('#overOffer').addEventListener('click',e=>{const b=e.target.closest('[data-iap]');if(b){openShop()}});
 // İlk oyun eğitimi: ilk Oyna oyununda üç kısa adım. Birinci adımda zaman durur.
 let TUT=null;
