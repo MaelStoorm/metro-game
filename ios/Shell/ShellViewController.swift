@@ -259,6 +259,10 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
             }
         case "copy":
             UIPasteboard.general.string = body["text"] as? String ?? ""
+        case "share":
+            let vc = UIActivityViewController(activityItems: [body["text"] as? String ?? ""], applicationActivities: nil)
+            vc.popoverPresentationController?.sourceView = view
+            present(vc, animated: true)
         case "location":
             if let id = body["id"] as? Int { location.request(id) }
         case "log":

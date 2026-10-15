@@ -27,7 +27,7 @@ import org.json.JSONObject;
 
 /**
  * Google Play uygulama içi satın alma (Play Billing Library 8).
- * Ürünler: jeton_300, jeton_1000 (tüketilen), destekci (bir kez alınır).
+ * Ürünler: jeton_ ile başlayanlar tüketilir (jeton_300, jeton_1000); diğerleri bir kez alınır (destekci, baslangic, cift_jeton, gorunum_paketi).
  * Sonuçlar oyuna window.__billing.products / purchased / owned ile döner.
  * Tüm iş ana iş parçacığında yapılır.
  */

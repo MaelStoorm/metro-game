@@ -143,6 +143,24 @@ public class MainActivity extends Activity {
             return ads != null && ads.privacyOptionsRequired();
         }
 
+        /** Meydan okuma kodunu paylaşmak için Android paylaşım penceresi. */
+        @JavascriptInterface
+        public void share(final String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_SEND);
+                    i.setType("text/plain");
+                    i.putExtra(Intent.EXTRA_TEXT, text);
+                    try {
+                        startActivity(Intent.createChooser(i, null));
+                    } catch (Exception e) {
+                        // paylaşacak uygulama yoksa sessizce geç
+                    }
+                }
+            });
+        }
+
         // ---------- uygulama içi satın alma (Google Play) ----------
         // Sonuçlar window.__billing.products / purchased / owned ile oyuna döner.
 

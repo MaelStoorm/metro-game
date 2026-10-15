@@ -71,6 +71,10 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--ink);outline-
 .iap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--rule)}.iap:first-of-type{margin-top:8px}.iap div{display:flex;flex-direction:column;gap:2px}.iap b{color:var(--ink);font-size:14.5px}.iap span{font-size:12.5px}.iap .chip{white-space:nowrap;min-width:84px}.iap .buy{background:var(--gold);color:#1a1300;border-color:transparent;font-weight:700}
 .lbtn.build{opacity:.75;border-style:dashed}
 .daily.live{border-color:var(--gold)}
+.coach{position:absolute;left:12px;right:12px;z-index:4;display:flex;gap:10px;align-items:center;background:var(--ink);color:var(--paper);border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:520px;margin:0 auto}.coach p{margin:0;font-size:14px;line-height:1.35;flex:1}.coach .chip{flex:none;background:var(--paper);color:var(--ink);border-color:transparent;font-weight:700}
+.nick{display:flex;gap:8px;margin-top:8px}.nick input{flex:1;min-width:0;text-align:left;font:inherit;font-size:15px}
+.offer{margin:10px 0 0;display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:13px}.offer .chip{flex:none}.offer .buy{background:var(--gold);color:#1a1300;border-color:transparent;font-weight:700}
+#overOnline{margin:4px 0 10px;font-size:13.5px}
 #clock{font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .controls{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .seg{display:flex;background:var(--panel);border:1px solid var(--rule);border-radius:999px;padding:3px;gap:2px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -295,6 +299,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
   </div>
 
   <div class="toast" id="toast" role="status"></div>
+  <div class="coach" id="coach" hidden><p id="coachText"></p><button class="chip" id="coachSkip">Geç</button></div>
 
   <div id="splash" role="img" aria-label="Raylı İstanbul açılış ekranı">
     <div class="sp-box">
@@ -369,7 +374,10 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <button class="secondary" id="side_europe">Avrupa Yakası</button>
         </div>
         <button class="secondary" id="btnDmap">📅 Günün haritası</button>
-        <button class="secondary" id="btnBudget">💰 Bütçe modu</button>
+        <div class="row2">
+          <button class="secondary" id="btnBudget">💰 Bütçe modu</button>
+          <button class="secondary" id="btnChal">⚔ Meydan oku</button>
+        </div>
         <button class="secondary" id="btnAch">🏆 Skorlar ve başarımlar · <span id="achCount">0</span></button>
         <div class="row2">
           <button class="secondary" id="btnShop2">Mağaza · <span class="coin">₺</span><span id="coinIntro">0</span></button>
@@ -409,6 +417,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <span class="eyebrow">Skorlar ve başarımlar</span>
       <h2 id="achTitle">Başarımlar</h2>
       <div class="daily" id="dailyBox2"></div>
+      <div class="board" id="onlineBox" hidden></div>
       <div class="board" id="boardBox"></div>
       <div class="achs" id="achList"></div>
       <button class="secondary" id="btnAchClose" style="width:100%">Kapat</button>
@@ -443,12 +452,15 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <h2 id="overTitle">İstasyon taştı</h2>
       <div class="big" id="overScore">0</div>
       <p class="muted" id="overText"></p>
+      <div class="board" id="overOnline" hidden></div>
+      <button class="primary" id="btnShareChal" style="margin-bottom:8px" hidden>⚔ Skorunu arkadaşına gönder</button>
       <button class="primary" id="btnAdCont" style="margin-bottom:8px">▶ Reklam izle, kaldığın yerden devam et</button>
       <div class="row2">
         <button class="secondary" id="btnOverShop">Mağaza</button>
         <button class="primary" id="btnRestart">Yeniden başla</button>
       </div>
       <button class="secondary" id="btnOverChaps" style="width:100%;margin-top:8px">Bölümler</button>
+      <p class="muted offer" id="overOffer" hidden></p>
     </div>
   </div>
 
@@ -484,9 +496,10 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>İlerleme</h3>
         <div class="set-row"><div class="lbl"><b>İlerlemeyi sıfırla</b><span>Jetonlar, alınan görünümler ve en iyi puan silinir</span></div><button class="chip danger" id="btnReset">Sıfırla</button></div>
         <div class="set-row" id="rowAdPrivacy" hidden><div class="lbl"><b>Reklam gizlilik seçenekleri</b><span>Reklamlar için verdiğin izni değiştir</span></div><button class="chip" id="btnAdPrivacy">Aç</button></div>
-        <div class="set-row" id="rowRestore" hidden><div class="lbl"><b>Satın alımları geri yükle</b><span>Reklamsız + destekçi paketini bu cihazda yeniden aç</span></div><button class="chip" id="btnRestore">Geri yükle</button></div>
+        <div class="set-row"><div class="lbl"><b>Takma ad</b><span>Çevrimiçi sıralamada görünür</span></div><input class="chip" id="setNick" maxlength="16" placeholder="Takma adın" aria-label="Takma ad" style="max-width:46%"></div>
+        <div class="set-row" id="rowRestore" hidden><div class="lbl"><b>Satın alımları geri yükle</b><span>Bir kez alınan paketleri bu cihazda yeniden aç</span></div><button class="chip" id="btnRestore">Geri yükle</button></div>
       </div>
-      <p class="credit">Raylı İstanbul · sürüm 4.0.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Raylı İstanbul · sürüm 4.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -501,6 +514,18 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="skins" id="skinList"></div>
       <div class="premium" id="iapBox"></div>
       <button class="primary" id="btnShopClose">Kapat</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="chalModal" hidden>
+    <div class="card">
+      <span class="eyebrow">Arkadaşına meydan oku</span>
+      <h2>Aynı harita, kim daha uzun dayanır?</h2>
+      <p class="muted">Yeni bir meydan okuma başlat. Oyun bitince kodu skorunla arkadaşına gönder: aynı hattan, aynı kuralla ve aynı yolcularla başlar.</p>
+      <button class="primary" id="btnChalNew" style="width:100%">⚔ Yeni meydan okuma başlat</button>
+      <p class="muted" style="margin:14px 0 6px">Arkadaşından kod mu geldi?</p>
+      <div class="nick"><input class="chip" id="chalCode" maxlength="14" placeholder="ör. K7Q2M-150" aria-label="Meydan okuma kodu" autocapitalize="characters"><button class="chip" id="btnChalGo">Oyna</button></div>
+      <button class="secondary" id="btnChalClose" style="width:100%;margin-top:14px">Kapat</button>
     </div>
   </div>
 
@@ -565,6 +590,10 @@ const SKINS = [
   {id:'destek',name:'Destekçi',desc:'Reklamsız + destekçi paketiyle gelir. Lacivert gövde, altın şerit.',price:0,hidden:true,how:'Destekçi paketiyle'},
   {id:'bayrak',name:'Al bayrak',desc:'Cumhuriyet Bayramı etkinliğinin ödülü. Kırmızı gövde, beyaz şerit.',price:0,hidden:true,how:'Cumhuriyet Bayramı etkinliği'},
   {id:'yilbasi',name:'Yılbaşı',desc:'Yılbaşı etkinliğinin ödülü. Çam yeşili gövde, kırmızı şerit.',price:0,hidden:true,how:'Yılbaşı etkinliği'},
+  {id:'yildiz',name:'Yıldız gecesi',desc:'Başlangıç paketine özel. Gece moru gövde, yıldız sarısı şerit.',price:0,hidden:true,how:'Başlangıç paketiyle'},
+  {id:'neon',name:'Neon',desc:'Premium paket. Koyu gövde, camgöbeği neon ışık.',price:0,hidden:true,how:'Premium paketle'},
+  {id:'marmara',name:'Marmara',desc:'Premium paket. Deniz mavisi gövde, köpük beyazı dalga şeridi.',price:0,hidden:true,how:'Premium paketle'},
+  {id:'kraliyet',name:'Kraliyet',desc:'Premium paket. Bordo gövde, altın şerit ve parıltı.',price:0,hidden:true,how:'Premium paketle'},
   {id:'ramazan',name:'Ramazan fenerleri',desc:'Ramazan etkinliğinin ödülü. Gece mavisi gövde, fener sarısı ışık.',price:0,hidden:true,how:'Ramazan etkinliği'},
 ];
 const BUSES = [
@@ -676,7 +705,7 @@ function sideLevels(side){const ok=id=>LINEDEF[id].seq.filter(i=>sideOf(i)===sid
   // çok grup varsa ikişer birleşir, böylece yaka bir oyunda tamamlanabilir (simülasyonla: Avrupa 11 → 6 grup)
   while(out.length>6){const m=[out[0]];for(let i=1;i<out.length;i+=2)m.push([...out[i],...(out[i+1]||[])]);out.splice(0,out.length,...m)}
   return out}
-function newGame(chap,region,dm){
+function newGame(chap,region,dm){if(!(dm&&String(dm.d)[0]==='c'))Math.random=RND0;if(typeof TUT!=='undefined'&&TUT)tutEnd();
   G={chap:chap||null,region:region||null,daily:dm?dm.d:null,dmod:dm?dm.mod:null,levels:region?sideLevels(region):dm?[[dm.line],...LEVELS.map(l=>l.filter(id=>id!==dm.line)).filter(l=>l.length)]:LEVELS,chapStar:0,t:0,score:0,speed:1,paused:true,over:false,modal:false,week:1,level:1,nextReveal:7,sel:null,undo:[],gecitUsed:0,earned:0,coinFrac:0,
      st:NODES.map(n=>({...n,queue:[],crowd:0,revealed:false,inPool:false,rt:-99,spawn:0})),
      lines:LINE_ORDER.map(id=>({...LINEDEF[id],st:[],trains:[],unlocked:false,rides:0})),
@@ -761,7 +790,7 @@ function lineDistricts(L){
 // ---------- Araçlar ----------
 function addScore(n){if(G.budget){const f=n*FARE;G.money+=f;G.dayInc=(G.dayInc||0)+f}
   if(satOn()){G.satFrac=(G.satFrac||0)+n*satMul();n=Math.floor(G.satFrac);G.satFrac-=n}
-  G.score+=n;G.coinFrac+=n*liveMul();liveGoal();while(G.coinFrac>=5){G.coinFrac-=5;G.earned++;P.coins++}
+  G.score+=n;G.coinFrac+=n*liveMul()*(P.iap&&P.iap.cift_jeton?2:1);liveGoal();while(G.coinFrac>=5){G.coinFrac-=5;G.earned++;P.coins++}
   if(G.chap)chapProgress();
   else if(G.level<G.levels.length&&G.score>=needFor(G.level))levelUp()}
 function chapProgress(){const id=G.chap,st=chapStars(id,G.score);if(st<=G.chapStar)return;
@@ -885,7 +914,7 @@ function onDeliver(L,n,pv,S){ST.del+=n;const brt=L.mode==='brt',mr=L.id==='B1',c
   if(mr)ST.mr+=n;if(brt)ST.brt+=n;if(cr)ST.cross+=n;if(hourOf(G.t)<6){G.nightDel=(G.nightDel||0)+n;dailyAdd('night',n)}save('mi-stat',ST);
   dailyAdd('del',n);if(brt)dailyAdd('brt',n);if(mr)dailyAdd('mr',n);if(cr)dailyAdd('cross',n);dailyAdd('score',G.score);checkAch()}
 function renderAchCount(){$('#achCount').textContent=`${Object.keys(ACH_OK).length}/${ACH.length}`}
-function openAch(){renderDaily();renderBoard();const n=Object.keys(ACH_OK).length;$('#achTitle').textContent=`${n}/${ACH.length} başarım`;
+function openAch(){renderDaily();renderBoard();renderOnline();const n=Object.keys(ACH_OK).length;$('#achTitle').textContent=`${n}/${ACH.length} başarım`;
   $('#achList').innerHTML=[...ACH].sort((a,b)=>!!ACH_OK[b.id]-!!ACH_OK[a.id]).map(a=>{const ok=!!ACH_OK[a.id],pr=!ok&&a.p?a.p():null;
     return `<div class="ach${ok?'':' no'}"><span class="ic">${a.ic}</span><div><b>${esc(a.name)}</b>${esc(a.desc)}${pr?`<div class="dbar"><i style="width:${Math.min(100,pr[0]/pr[1]*100)}%"></i></div>`:''}</div><span class="c">${ok?'✓':'+'+a.c+' ₺'}</span></div>`}).join('');
   achWasPaused=G.paused;G.paused=true;$('#achModal').hidden=false;hud(true)}
@@ -1019,12 +1048,12 @@ function gameOver(s){
   const wasBest=G.score>P.best&&!G.chap&&!G.region&&!G.daily;if(!G.daily)P.best=Math.max(P.best,G.score);const rank=recordScore();persist();
   $('#overTitle').textContent=G.bankrupt?'Kasa boşaldı, iflas!':s.name+' taştı';$('#overScore').textContent=G.score;
   $('#overText').textContent=G.daily?`puan topladın. Günün haritasında bugünkü en iyin ${DMAP.best}${dBest?', yeni günlük rekor! 🎉':''}. Yarın yeni bir harita ve yeni bir kural gelir. ${G.earned} jeton kazandın.`:G.chap?`puan topladın (hedef ${chapTarget(G.chap)}). ${chapLabel(G.chap)} bölümünde yıldızın: ${'★'.repeat((P.chap[G.chap]||{}).stars||0)||'henüz yok'}. ${G.earned} jeton kazandın.`:`puan topladın, seviye ${G.level}'e ulaştın ve ${G.earned} jeton kazandın. ${wasBest?'Yeni rekor! 🎉':`En iyi puanın: ${P.best}.`}${rank>=0?` Skor tablosunda ${rank+1}. sıradasın.`:''}`;
-  $('#btnAdCont').hidden=!!G.adUsed;$('#btnAdCont').textContent=P.adfree?'▶ Kaldığın yerden devam et':'▶ Reklam izle, kaldığın yerden devam et';$('#overModal').hidden=false;
+  afterOver();$('#btnAdCont').hidden=!!G.adUsed;$('#btnAdCont').textContent=P.adfree?'▶ Kaldığın yerden devam et':'▶ Reklam izle, kaldığın yerden devam et';$('#overModal').hidden=false;
   vib([80,60,160]);
 }
 // ---------- Kayıt: oyun her birkaç saniyede ve uygulamadan çıkarken kaydedilir; açılışta "Devam et" ile sürer ----------
 function clearSave(){try{localStorage.removeItem('mi-save')}catch(e){}}
-function saveGame(){if(!G||G.over||G.t<3)return;
+function saveGame(){if(!G||G.over||G.t<3||G.chal)return;
   const g={};for(const k of ['t','score','week','level','nextReveal','gecitUsed','earned','coinFrac','pool','chap','chapStar','speed','rescued','adUsed','ev','evDay','recId','lastKar','region','night','nightTold','wasClosed','daily','dmod','spawnMul','nightDel','levels','mornTold','nightBonus','mis','sat','satFrac','build','boost','budget','money','infraPaid','dayInc','debtDays','payDay','lastDay'])g[k]=G[k];
   save('mi-save',{v:1,g,st:G.st.filter(s=>s.inPool||s.revealed).map(s=>[s.i,s.revealed?1:0,s.queue,+s.crowd.toFixed(3),+s.spawn.toFixed(2)]),
     lines:G.lines.map(L=>[L.id,L.unlocked?1:0,L.st.map(s=>s.i),L.trains.map(t=>[t.i,t.dir,+t.t.toFixed(3),+t.dwell.toFixed(2),t.pax,t.cars]),L.rides||0])})}
@@ -1276,7 +1305,7 @@ function drawLines(){
 }
 // Araç çizimi: c=bağlam, look=gövde tipi, color=hat rengi, skin=görünüm, pax=yolcu türleri, cars=vagon sayısı
 let VSC=1.2;
-const RECOLOR=['nostalji','gece','kis','hafif','lale','vapur','altin','seri','destek','bayrak','yilbasi','ramazan'];
+const RECOLOR=['nostalji','gece','kis','hafif','lale','vapur','altin','seri','destek','bayrak','yilbasi','ramazan','yildiz','neon','marmara','kraliyet'];
 function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
   if(skin==='metrobus')look='bus';else if(skin==='metro')look='metro';
   bus=look==='bus'?(bus||'std'):'std';
@@ -1298,6 +1327,10 @@ function drawVehicle(c,look,color,skin,pax,cars,cap,bus,poses){
   if(skin==='bayrak'){body='#E30A17';stripe='#FFFFFF';band=null}
   if(skin==='yilbasi'){body='#1F6E43';stripe='#D7263D';band=null}
   if(skin==='ramazan'){body='#1E3A5F';stripe='#F2C14E';glow='#F2C14E';band=null}
+  if(skin==='yildiz'){body='#2E1A47';stripe='#FFD166';glow='#FFD166';band=null}
+  if(skin==='neon'){body='#0D1117';stripe='#00F0FF';glow='#00F0FF';win='#00F0FF';band=null}
+  if(skin==='marmara'){body='#1565A6';stripe='#E8F4FA';band=null}
+  if(skin==='kraliyet'){body='#6D1A36';stripe='#E3B341';glow='#E3B341';band=null}
   if(glow&&CFG.gfx==='pil')glow=null;
   const real=skin==='gercek'&&look!=='bus';if(real){body='#EEF1EF';win='#FFFFFF'}
   if(bus==='std'&&look==='bus'&&!RECOLOR.includes(skin)){body='#B9C0C4';band=null;win='#1E2528'}
@@ -1401,12 +1434,13 @@ function drawEvent(){if(!G.ev)return;const e=evDef(),t=performance.now()/1000;
 
 
 // ---------- Ses ----------
+const RNDA=Math.random; // ses için ayrı rastgelelik: meydan okumadaki tohumlu oyun sırası seslerden etkilenmesin
 // Bütün sesler Web Audio ile üretilir. Durak anonsu yok (4.0.1'de kaldırıldı).
 const SND={on:load('mi-sound',true),c:null,m:null,hum:null,last:{},speakAt:0,nb:null};
 function audioInit(){
   if(SND.c){try{SND.c.resume()}catch(e){}return}
   try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;SND.c=new AC();SND.m=SND.c.createGain();SND.m.gain.value=masterVol();SND.m.connect(SND.c.destination);
-    const len=SND.c.sampleRate*2,b=SND.c.createBuffer(1,len,SND.c.sampleRate),d=b.getChannelData(0);let br=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;br=(br+.02*w)/1.02;d[i]=w*.5+br*3}SND.nb=b;
+    const len=SND.c.sampleRate*2,b=SND.c.createBuffer(1,len,SND.c.sampleRate),d=b.getChannelData(0);let br=0;for(let i=0;i<len;i++){const w=RNDA()*2-1;br=(br+.02*w)/1.02;d[i]=w*.5+br*3}SND.nb=b;
     const n=SND.c.createBufferSource();n.buffer=b;n.loop=true;const lp=SND.c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=190;const dg=SND.c.createGain();dg.gain.value=0;n.connect(lp).connect(dg).connect(SND.m);n.start();
     const o=SND.c.createOscillator();o.type='sawtooth';o.frequency.value=50;const o2=SND.c.createOscillator();o2.type='triangle';o2.frequency.value=82;const og=SND.c.createGain();og.gain.value=.6;o2.connect(og);const lp2=SND.c.createBiquadFilter();lp2.type='lowpass';lp2.frequency.value=260;const eg=SND.c.createGain();eg.gain.value=0;o.connect(lp2).connect(eg).connect(SND.m);o.start();o2.start();
     // Dizel rölanti: 6 silindirli motorun ateşleme darbeleri (PeriodicWave), alçak geçiren filtreyle
@@ -1432,7 +1466,7 @@ function tone(f,dur,type,vol,t0,f2){const c=SND.c,o=c.createOscillator(),g=c.cre
 function swell(f,f2,dur,type,vol,t0){const c=SND.c,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t0);o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
   g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol,t0+dur*.35);g.gain.linearRampToValueAtTime(0,t0+dur);o.connect(g).connect(SND.m);o.start(t0);o.stop(t0+dur+.05)}
 function hiss(dur,vol,type,freq,t0){const c=SND.c,s=c.createBufferSource();s.buffer=SND.nb;const f=c.createBiquadFilter();f.type=type;f.frequency.value=freq;const g=c.createGain();
-  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol,t0+.03);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);s.connect(f).connect(g).connect(SND.m);s.start(t0,Math.random());s.stop(t0+dur+.05)}
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol,t0+.03);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);s.connect(f).connect(g).connect(SND.m);s.start(t0,RNDA());s.stop(t0+dur+.05)}
 function playRec(k,vol,t){const s=SND.c.createBufferSource(),g=SND.c.createGain();s.buffer=SND.rec[k];g.gain.value=vol;s.connect(g).connect(SND.m);s.start(t)}
 // Dizel motor: ateşleme frekansı (Hz) zaman noktalarına göre değişir; vites geçişi düşüş olarak yazılır. Turbo ıslığı hızlanırken.
 function diesel(t0,dur,pts,vol){const c=SND.c,o=c.createOscillator(),o2=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter(),ws=c.createWaveShaper();
@@ -1444,7 +1478,7 @@ function diesel(t0,dur,pts,vol){const c=SND.c,o=c.createOscillator(),o2=c.create
   const up=pts[pts.length-1][1]>pts[0][1];if(up){swell(2600,4300,dur*.9,'sine',.006,t0+.4);
     // hızlandıkça artan yol ve rüzgâr sesi (kayıttaki 2-6 kHz yükselişi)
     const n=c.createBufferSource();n.buffer=SND.nb;const nf=c.createBiquadFilter();nf.type='bandpass';nf.frequency.value=2800;nf.Q.value=.6;const ng=c.createGain();
-    ng.gain.setValueAtTime(0,t0);ng.gain.linearRampToValueAtTime(.025,t0+dur);ng.gain.linearRampToValueAtTime(0,t0+dur+.3);n.connect(nf).connect(ng).connect(SND.m);n.start(t0,Math.random());n.stop(t0+dur+.4)}}
+    ng.gain.setValueAtTime(0,t0);ng.gain.linearRampToValueAtTime(.025,t0+dur);ng.gain.linearRampToValueAtTime(0,t0+dur+.3);n.connect(nf).connect(ng).connect(SND.m);n.start(t0,RNDA());n.stop(t0+dur+.4)}}
 // Metro çekiş sesi (VVVF evirici): sabit taşıyıcı, mod değişiminde sıçrama, motorla birlikte yükselen uğultu ve ray sesi
 function vvvf(t,up){const c=SND.c,o=c.createOscillator(),g=c.createGain(),bp=c.createBiquadFilter(),m=c.createOscillator(),mg=c.createGain(),D=3.6;
   o.type='sawtooth';bp.type='bandpass';bp.Q.value=2.5;m.type='sine';
@@ -1456,7 +1490,7 @@ function vvvf(t,up){const c=SND.c,o=c.createOscillator(),g=c.createGain(),bp=c.c
   m.frequency.setValueAtTime(up?35:240,t);m.frequency.linearRampToValueAtTime(up?240:35,t+D);mg.gain.setValueAtTime(0,t);mg.gain.linearRampToValueAtTime(.05,t+.4);mg.gain.linearRampToValueAtTime(0,t+D);
   m.connect(mg).connect(SND.m);m.start(t);m.stop(t+D+.1);
   const n=c.createBufferSource();n.buffer=SND.nb;const nf=c.createBiquadFilter();nf.type='bandpass';nf.frequency.value=420;nf.Q.value=.7;const ng=c.createGain();
-  ng.gain.setValueAtTime(up?0:.06,t);ng.gain.linearRampToValueAtTime(up?.06:0,t+D);n.connect(nf).connect(ng).connect(SND.m);n.start(t,Math.random());n.stop(t+D+.1);
+  ng.gain.setValueAtTime(up?0:.06,t);ng.gain.linearRampToValueAtTime(up?.06:0,t+D);n.connect(nf).connect(ng).connect(SND.m);n.start(t,RNDA());n.stop(t+D+.1);
   if(!up){tone(1850,.5,'sine',.006,t+D-.9,1700);hiss(.6,.05,'highpass',3000,t+D-.2)}}
 function sfx(kind,bus){
   if(!SND.c||!SND.on||SND.c.state!=='running')return;if(!CFG.vehicle)return;const t=SND.c.currentTime,key=kind+(bus?'b':'');
@@ -1604,7 +1638,7 @@ function renderBar(){
     +(next?`<button class="lbtn locked" title="Seviye ${G.level+1} ile açılır" tabindex="-1">🔒︎<br>Sv ${G.level+1}</button>`:'');
 }
 function hud(force){
-  syncPause();hudEcon();$('#vbTrain').classList.toggle('has',G.pool.train>0&&!G.over);$('#vbCar').classList.toggle('has',G.pool.car>0&&!G.over);
+  syncPause();hudEcon();tutTick();$('#vbTrain').classList.toggle('has',G.pool.train>0&&!G.over);$('#vbCar').classList.toggle('has',G.pool.car>0&&!G.over);
   const sig=[G.score,G.week,Math.floor(G.t/DAY*48),G.level,G.pool.train,G.pool.car,gecitFree(),G.pool.gecit,G.sel,confirmDel,G.paused,G.speed,P.coins,
     G.lines.map(l=>l.st.length+':'+l.trains.length+':'+l.trains.reduce((a,t)=>a+t.cars,0)).join(),[...presentTypes()].join()].join('|');
   if(sig===lastHud&&!force)return;lastHud=sig;
@@ -1614,7 +1648,7 @@ function hud(force){
   if(G.chap){const t=chapTarget(G.chap),st=G.chapStar,nt=starNeed(G.chap,Math.min(2,st));
     $('#lvlName').textContent=`Bölüm ${CHAPS.indexOf(G.chap)+1}`;$('#lvlNext').textContent=`${G.score}/${nt} · ${'★'.repeat(st)}${'☆'.repeat(3-st)}`;
     $('#lvlBar').style.width=Math.min(100,G.score/nt*100)+'%'}
-  else{$('#lvlName').textContent=G.daily?`📅 Sv ${G.level}`:`Seviye ${G.level}`;
+  else{$('#lvlName').textContent=G.chal?`⚔ Sv ${G.level}`:G.daily?`📅 Sv ${G.level}`:`Seviye ${G.level}`;
   $('#lvlNext').textContent=hi?`${G.score}/${hi} · Sonraki: ${G.levels[G.level].map(LABEL).join(', ')}`:G.region?`${SIDES[G.region].name} tamam`:'Bütün hatlar açık';
   $('#lvlBar').style.width=(hi?Math.min(100,(G.score-lo)/(hi-lo)*100):100)+'%'}
   $('#invTrain').textContent=G.pool.train;$('#invCar').textContent=G.pool.car;$('#invGecit').textContent=gecitFree();{const L=G.sel&&lineById(G.sel),n=L?L.rides||0:G.lines.reduce((a,l)=>a+(l.rides||0),0);$('#paxLbl').textContent=L?LABEL(L.id)+' yolcu':'Yolcu';$('#invPax').textContent=n>=10000?(n/1000).toFixed(n>=100000?0:1).replace('.',',')+'B':n.toLocaleString('tr-TR')}
@@ -1741,7 +1775,7 @@ function renderSettings(){
 // Android uygulamasında (AB ve Birleşik Krallık gibi yerlerde) reklam izni ayarlardan yeniden açılabilmeli. Web sürümünde satır gizli kalır.
 function adPrivacyRow(){let on=false;try{on=!!(window.AndroidTTS&&AndroidTTS.privacyOptionsRequired&&AndroidTTS.privacyOptionsRequired())}catch(e){}$('#rowAdPrivacy').hidden=!on}
 $('#btnAdPrivacy').onclick=()=>{try{AndroidTTS.showPrivacyOptions()}catch(e){}};
-function openSettings(){adPrivacyRow();setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
+function openSettings(){adPrivacyRow();$('#setNick').value=P.nick||'';setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
 $('#btnSettings').onclick=openSettings;$('#btnSettings2').onclick=openSettings;
 $('#btnSettingsClose').onclick=()=>{$('#settingsModal').hidden=true;G.paused=setWasPaused;hud(true)};
 $('#setVol').addEventListener('input',e=>{CFG.vol=+e.target.value;saveCfg();audioInit();applyVol();$('#volLbl').textContent='%'+CFG.vol});
@@ -1765,16 +1799,16 @@ $('#btnS2').onclick=()=>{G.speed=2;if(!G.over&&!G.modal)G.paused=false;hud(true)
 $('#btnCenter').onclick=()=>setManual(false);
 $('#btnReal').onclick=()=>{showReal=!showReal;CFG.real=showReal;saveCfg();$('#btnReal').setAttribute('aria-pressed',String(showReal))};
 $('#btnHelp').onclick=()=>{G.paused=true;$('#intro').hidden=false;$('#btnStart').textContent='Devam et';hud(true)};
-$('#btnStart').onclick=()=>{if(resumeOffer){resumeOffer=false;try{loadGame(SAVED)}catch(e){clearSave();newGame()}}
-  resumeOffer=false;$('#btnNew').hidden=true;$('#intro').hidden=true;if(!G.over)G.paused=false;hud(true)};
-$('#btnNew').onclick=()=>{resumeOffer=false;clearSave();newGame();$('#btnNew').hidden=true;$('#intro').hidden=true;G.paused=false;hud(true)};
+$('#btnStart').onclick=()=>{const fresh=!resumeOffer&&G.t===0;if(resumeOffer){resumeOffer=false;try{loadGame(SAVED)}catch(e){clearSave();newGame()}}
+  resumeOffer=false;$('#btnNew').hidden=true;$('#intro').hidden=true;if(!G.over)G.paused=false;if(fresh)tutStart();hud(true)};
+$('#btnNew').onclick=()=>{resumeOffer=false;clearSave();newGame();$('#btnNew').hidden=true;$('#intro').hidden=true;G.paused=false;tutStart();hud(true)};
 $('#btnDmap').onclick=startDmap;renderDmap();$('#btnBudget').onclick=startBudget;
 $('#side_asia').onclick=()=>startSide('asia');$('#side_europe').onclick=()=>startSide('europe');renderSides();
 let resumeOffer=!!(SAVED&&SAVED.v===1);
 if(resumeOffer){$('#btnStart').textContent=`Devam et · ${SAVED.g.score} puan`;$('#btnNew').hidden=false}
 setInterval(()=>{if(G&&!G.paused)saveGame()},5000);
 addEventListener('pagehide',saveGame);
-$('#btnRestart').onclick=()=>{if(G.budget){startBudget();return}if(G.daily){startDmap();return}if(G.chap){startChap(G.chap);return}if(G.region){startSide(G.region);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
+$('#btnRestart').onclick=()=>{if(G.chal){startChal(G.chal.code,G.chal.target);return}if(G.budget){startBudget();return}if(G.daily){startDmap();return}if(G.chap){startChap(G.chap);return}if(G.region){startSide(G.region);return}$('#overModal').hidden=true;newGame();G.paused=false;hud(true)};
 $('#btnChaps').onclick=()=>{$('#intro').hidden=true;openChaps()};$('#btnOverChaps').onclick=()=>{$('#overModal').hidden=true;openChaps()};
 $('#btnAch').onclick=openAch;$('#btnAchClose').onclick=()=>{$('#achModal').hidden=true;G.paused=achWasPaused;hud(true)};
 $('#btnChapClose').onclick=()=>{$('#chapModal').hidden=true;if(G.over)$('#overModal').hidden=false;else if(!G.modal)G.paused=chapWasPaused;hud(true)};
@@ -1791,6 +1825,64 @@ window.addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('but
 
 // İngilizce arayüz sözlüğü (Türkçe metin → İngilizce)
 const I18N_EXACT={
+"⚔ Meydan oku":"⚔ Challenge",
+"Arkadaşına meydan oku":"Challenge a friend",
+"Aynı harita, kim daha uzun dayanır?":"Same map, who lasts longer?",
+"Yeni bir meydan okuma başlat. Oyun bitince kodu skorunla arkadaşına gönder: aynı hattan, aynı kuralla ve aynı yolcularla başlar.":"Start a new challenge. When the game ends, send the code with your score to a friend: they start from the same line, with the same rule and the same passengers.",
+"⚔ Yeni meydan okuma başlat":"⚔ Start a new challenge",
+"Arkadaşından kod mu geldi?":"Got a code from a friend?",
+"ör. K7Q2M-150":"e.g. K7Q2M-150",
+"Meydan okuma kodu":"Challenge code",
+"⚔ Skorunu arkadaşına gönder":"⚔ Send your score to a friend",
+"Takma ad":"Nickname",
+"Çevrimiçi sıralamada görünür":"Shown on the online leaderboard",
+"Takma adın":"Your nickname",
+"Katıl":"Join",
+"Sıralamada yalnızca takma adın ve skorun görünür.":"Only your nickname and score are shown on the leaderboard.",
+"🌍 Türkiye sıralaması":"🌍 Turkey leaderboard",
+"Bu hafta (Oyna)":"This week (Play)",
+"Yükleniyor…":"Loading…",
+"Henüz kimse yok. İlk sen ol!":"Nobody yet. Be the first!",
+"Sıralamaya bağlanılamadı. İnternet bağlantını kontrol et.":"Couldn't reach the leaderboard. Check your internet connection.",
+"🌍 Türkiye sıralamasına girmek için takma ad seç:":"🌍 Pick a nickname to join the Turkey leaderboard:",
+"🌍 Sıralamaya gönderiliyor…":"🌍 Sending to the leaderboard…",
+"🌍 Sıralamaya bağlanılamadı (internet yok). Skorun bu cihazda kayıtlı.":"🌍 Couldn't reach the leaderboard (offline). Your score is saved on this device.",
+"⚔ Bu meydan okumanın sıralaması":"⚔ This challenge's ranking",
+"🌍 Günün haritası sıralaması":"🌍 Daily map ranking",
+"🌍 Haftanın sıralaması":"🌍 This week's ranking",
+"sıradasın":"place",
+": ilk 50'nin dışında":": outside the top 50",
+"Geç":"Skip",
+"Anladım":"Got it",
+"🚇 Hattında bir araç çalışıyor. Daha çok yolcu taşımak için alttaki Araç sayısına dokun ya da sürükleyip hattın üstüne bırak.":"🚇 A train is running on your line. To carry more passengers, tap the Train count below or drag it onto the line.",
+"🎯 Her yolcunun şekli gideceği yerin türü. Kalabalık durağa hat ya da araç ekle: bir durak taşarsa oyun biter. İyi yolculuklar!":"🎯 Each passenger's shape is the kind of place they're going. Add lines or trains to crowded stations: if a station overflows, the game ends. Have a good trip!",
+"puan topladın. Kodu skorunla arkadaşına gönder, aynı haritada seni geçmeye çalışsın.":"points. Send the code with your score to a friend so they can try to beat you on the same map.",
+"Takma ad en az 2 harf olsun.":"Nickname must be at least 2 letters.",
+"Kod 5 harf/rakamdan oluşur, ör. K7Q2M-150.":"A code is 5 letters/digits, e.g. K7Q2M-150.",
+"📋 Panoya kopyalandı, arkadaşına yapıştırıp gönder.":"📋 Copied. Paste it to your friend.",
+"Başlangıç paketi":"Starter pack",
+"Çift jeton":"Double coins",
+"Premium görünüm paketi":"Premium skin pack",
+"500 jeton ve yalnızca bu pakette olan Yıldız gecesi görünümü. Bir kez alınır.":"500 coins and the Starry Night skin, only in this pack. One-time purchase.",
+"Taşıdığın her yolcudan sonsuza kadar iki kat jeton kazanırsın.":"Earn double coins from every passenger, forever.",
+"Mağazada satılmayan üç görünüm: Neon, Marmara ve Kraliyet.":"Three skins not sold for coins: Neon, Marmara and Royal.",
+"🎁 Başlangıç paketi açıldı: 500 jeton ve Yıldız gecesi görünümü.":"🎁 Starter pack unlocked: 500 coins and the Starry Night skin.",
+"✨ Çift jeton açıldı: yolculardan artık iki kat jeton kazanacaksın.":"✨ Double coins unlocked: you now earn twice the coins from passengers.",
+"🎨 Premium görünümler açıldı: Neon, Marmara ve Kraliyet.":"🎨 Premium skins unlocked: Neon, Marmara and Royal.",
+"Satın aldığın paketler geri yüklendi.":"Your purchases were restored.",
+"Bir kez alınan paketleri bu cihazda yeniden aç":"Re-unlock one-time packs on this device",
+"Yıldız gecesi":"Starry Night",
+"Neon":"Neon",
+"Marmara":"Marmara",
+"Kraliyet":"Royal",
+"Başlangıç paketine özel. Gece moru gövde, yıldız sarısı şerit.":"Starter pack only. Night-purple body, star-yellow stripe.",
+"Premium paket. Koyu gövde, camgöbeği neon ışık.":"Premium pack. Dark body, cyan neon glow.",
+"Premium paket. Deniz mavisi gövde, köpük beyazı dalga şeridi.":"Premium pack. Sea-blue body, foam-white wave stripe.",
+"Premium paket. Bordo gövde, altın şerit ve parıltı.":"Premium pack. Burgundy body, gold stripe and shine.",
+"🔒︎ Başlangıç paketiyle":"🔒︎ With the starter pack",
+"🔒︎ Premium paketle":"🔒︎ With the premium pack",
+"Başlangıç paketi:":"Starter pack:",
+
 // ---- HUD / header ----
 "İstanbul raylı sistem haritası":"Istanbul rail network map",
 "puan":"points",
@@ -2168,6 +2260,15 @@ const I18N_EXACT={
 "Florya Atatürk Ormanı":"Florya Atatürk Forest","Atatürk Olimpiyat Stadı":"Atatürk Olympic Stadium","Pierre Loti Tepesi":"Pierre Loti Hill","Moda Sahili":"Moda Shore"
 };
 const I18N_RX=[
+  [/^👆 Bir istasyona dokun, parmağını kaldırmadan başka bir istasyona sürükle(?: \(ör\. (.+) → (.+)\))?\. İlk hattın çizilir\. Sen çizene kadar zaman durur\.$/,(m,a,b)=>`👆 Touch a station and drag to another without lifting your finger${a?` (e.g. ${a} → ${b})`:''}. Your first line is drawn. Time stands still until you draw it.`],
+  [/^⚔ Meydan okuma (\w+): (\S+) ile başla\. (.+?)\.(?: Yenmen gereken skor: (\d+)\.| Oyun bitince kodu skorunla arkadaşına gönder\.)$/,(m,c,l,mod,t)=>`⚔ Challenge ${c}: start with ${l}. ${tr(mod)}.`+(t?` Score to beat: ${t}.`:' When the game ends, send the code with your score to a friend.')],
+  [/^puan topladın\. Arkadaşının skoru (\d+): kazandın! 🎉 Skorunu ona geri gönder\.$/,'points. Your friend scored $1: you win! 🎉 Send your score back.'],
+  [/^puan topladın\. Arkadaşınla berabere \((\d+)\)\.$/,'points. A tie with your friend ($1).'],
+  [/^puan topladın\. Arkadaşının skoru (\d+), bu sefer o kazandı\. Yeniden dene!$/,'points. Your friend scored $1, they win this time. Try again!'],
+  [/^Takma adın: (.+)$/,'Your nickname: $1'],
+  [/^: (\d+)\.$/,': #$1'],
+  [/^⚔ Sv (\d+)$/,'⚔ Lv $1'],
+
 // ---- clock (HUD) ----
 [/^(\S+) (İlkbahar|Yaz|Sonbahar|Kış) · (\d+)\. hafta · (Pazartesi|Salı|Çarşamba|Perşembe|Cuma|Cumartesi|Pazar) (\d\d:\d\d)(?: · (🌙 Metrolar kapalı|Yoğun saat|Gece))?(?: · (\S+) (.+))?$/,
   (m,ic,se,w,d,t,x,eic,en)=>`${ic} ${I18N_EXACT[se]} · Week ${w} · ${I18N_EXACT[d]} ${t}${x?' · '+I18N_EXACT[x]:''}${eic?` · ${eic} ${I18N_EXACT[en]||en}`:''}`],
@@ -2406,9 +2507,13 @@ $('#btnLoginClaim').onclick=()=>{const st=+$('#btnLoginClaim').dataset.st||1;let
 // Uygulama içi satın alma. Android: AndroidTTS.billing*, iPhone: webkit shell iap*; web sürümünde satış yok.
 // Kişi başı toplam harcama 100 TL ile sınırlı (cihazda tutulur, fiyatlar mağazadan gelir).
 const IAP=[{id:'jeton_300',c:300,n:'300 jeton',d:'Görünüm almak için jeton paketi.'},{id:'jeton_1000',c:1000,n:'1000 jeton',d:'Bütün görünümlere yetecek büyük paket.'},
-  {id:'destekci',c:0,once:true,n:'Reklamsız + destekçi',d:'Oyun bittiğinde reklam izlemeden devam edersin, Destekçi görünümü gelir ve Maelstrom Studio\'ya destek olursun.'}];
+  {id:'destekci',c:0,once:true,n:'Reklamsız + destekçi',d:'Oyun bittiğinde reklam izlemeden devam edersin, Destekçi görünümü gelir ve Maelstrom Studio\'ya destek olursun.',ok:'💛 Teşekkürler! Reklamsız devam ve Destekçi görünümü açıldı.'},
+  {id:'baslangic',c:500,once:true,n:'Başlangıç paketi',d:'500 jeton ve yalnızca bu pakette olan Yıldız gecesi görünümü. Bir kez alınır.',ok:'🎁 Başlangıç paketi açıldı: 500 jeton ve Yıldız gecesi görünümü.'},
+  {id:'cift_jeton',c:0,once:true,n:'Çift jeton',d:'Taşıdığın her yolcudan sonsuza kadar iki kat jeton kazanırsın.',ok:'✨ Çift jeton açıldı: yolculardan artık iki kat jeton kazanacaksın.'},
+  {id:'gorunum_paketi',c:0,once:true,n:'Premium görünüm paketi',d:'Mağazada satılmayan üç görünüm: Neon, Marmara ve Kraliyet.',ok:'🎨 Premium görünümler açıldı: Neon, Marmara ve Kraliyet.'}];
+P.iap=load('mi-iap',{});
 const IAP_CAP=100,FX={TRY:1,USD:42,EUR:49,GBP:56};
-P.spent=load('mi-spent',0);P.adfree=load('mi-adfree',false);
+P.spent=load('mi-spent',0);P.adfree=load('mi-adfree',false);if(P.adfree)P.iap.destekci=1;
 const BILL={prods:{},asked:false,busy:''};
 const iosIap=()=>!!(window.__iapNative&&window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.shell);
 const andIap=()=>{try{return !!(window.AndroidTTS&&AndroidTTS.billingReady&&AndroidTTS.billingReady())}catch(e){return false}};
@@ -2418,26 +2523,29 @@ function iapCall(op,arg){try{if(iosIap()){webkit.messageHandlers.shell.postMessa
   if(window.AndroidTTS){if(op==='iapProducts'&&AndroidTTS.billingProducts){AndroidTTS.billingProducts(JSON.stringify(arg.ids));return true}
     if(op==='iapBuy'&&AndroidTTS.billingBuy){AndroidTTS.billingBuy(arg.id);return true}if(op==='iapRestore'&&AndroidTTS.billingRestore){AndroidTTS.billingRestore();return true}}}catch(e){}return false}
 const priceTL=p=>p&&p.micros?p.micros/1e6*(FX[p.currency]||45):0;
+// Bir kez alınan paketler: ilk görüldüğünde (satın alma ya da geri yükleme) etkisi verilir
+const ONCE_SKINS={destekci:['destek'],baslangic:['yildiz'],gorunum_paketi:['neon','marmara','kraliyet']};
+function grantOnce(id){if(P.iap[id])return false;P.iap[id]=1;save('mi-iap',P.iap);if(id==='destekci')grantAdfree();
+  const it=IAP.find(x=>x.id===id);if(it&&it.c)P.coins+=it.c;for(const sk of ONCE_SKINS[id]||[])if(!P.owned.includes(sk))P.owned.push(sk);persist();return true}
 function grantAdfree(){if(!P.adfree){P.adfree=true;save('mi-adfree',true)}if(!P.owned.includes('destek')){P.owned.push('destek');persist()}}
 window.__billing={
   products(list){try{if(typeof list==='string')list=JSON.parse(list)}catch(e){list=[]}for(const p of list||[])BILL.prods[p.id]=p;if(!$('#shopModal').hidden)renderIap()},
   purchased(id,ok,info){BILL.busy='';const it=IAP.find(x=>x.id===id);
     if(ok&&it){const p=BILL.prods[id];if(info!=='restore'||!it.once){P.spent=Math.round((P.spent+priceTL(p))*100)/100;save('mi-spent',P.spent)}
-      if(it.once)grantAdfree();else{P.coins+=it.c;persist()}
-      toast(it.once?'💛 Teşekkürler! Reklamsız devam ve Destekçi görünümü açıldı.':`₺ ${it.c} jeton eklendi. Teşekkürler!`);vib([30,40,30])}
+      if(it.once){if(grantOnce(id))toast(it.ok)}else{P.coins+=it.c;persist();toast(`₺ ${it.c} jeton eklendi. Teşekkürler!`)}vib([30,40,30])}
     else if(info==='pending')toast('Ödeme onay bekliyor. Onaylanınca paket kendiliğinden gelir.');
     else if(info&&info!=='cancel')toast('Satın alma tamamlanamadı. Daha sonra yeniden dene.');
     hud(true);if(!$('#shopModal').hidden)renderShop()},
-  owned(ids){try{if(typeof ids==='string')ids=JSON.parse(ids)}catch(e){ids=[]}if((ids||[]).includes('destekci')){const had=P.adfree;grantAdfree();if(!had)toast('Destekçi paketin geri yüklendi.');if(!$('#shopModal').hidden)renderShop()}}};
+  owned(ids){try{if(typeof ids==='string')ids=JSON.parse(ids)}catch(e){ids=[]}let got=0;for(const id of ids||[])if(IAP.some(x=>x.id===id&&x.once)&&grantOnce(id))got++;if(got){toast('Satın aldığın paketler geri yüklendi.');hud(true)}if(!$('#shopModal').hidden)renderShop()}};
 function iapAsk(){if(BILL.asked||!iapPlatform())return;if(andHasIap()&&!andIap())return;BILL.asked=true;iapCall('iapProducts',{ids:IAP.map(x=>x.id)})}
 function renderIap(){const el=$('#iapBox');if(!el)return;$('#rowRestore').hidden=!iapPlatform();
   if(!iapPlatform()){el.innerHTML='<strong>Gerçek parayla paketler.</strong> Jeton paketleri ve reklamsız destekçi paketi Google Play ve App Store uygulamasında satılır. Bu web sürümünde ödeme alınmıyor.';return}
   iapAsk();const left=Math.max(0,IAP_CAP-P.spent);
-  const rows=IAP.map(it=>{const p=BILL.prods[it.id],own=it.once&&P.adfree,tl=priceTL(p),over=!own&&p&&tl>left+.01;
+  const rows=IAP.map(it=>{const p=BILL.prods[it.id],own=it.once&&!!P.iap[it.id],tl=priceTL(p),over=!own&&p&&tl>left+.01;
     return `<div class="iap"><div><b>${esc(it.n)}</b><span>${esc(it.d)}</span></div><button class="chip${own?'':' buy'}" data-iap="${it.id}" ${own||!p||over||BILL.busy?'aria-disabled="true"':''}>${own?'✓ Sende':!p?'…':esc(p.price)}</button></div>`}).join('');
   el.innerHTML=`<strong>Paketler</strong>${rows}<p class="muted" style="margin:8px 0 0;font-size:12px">Kişi başı toplam harcama sınırı ${IAP_CAP} TL. Kalan: ${Math.floor(left)} TL.${Object.keys(BILL.prods).length?'':' Mağaza bilgisi yükleniyor…'}</p>`}
 $('#shopModal').addEventListener('click',e=>{const b=e.target.closest('[data-iap]');if(!b)return;const id=b.dataset.iap,it=IAP.find(x=>x.id===id),p=BILL.prods[id];
-  if(it.once&&P.adfree)return;if(!p){toast('Mağaza bilgisi henüz gelmedi, biraz sonra dene.');return}
+  if(it.once&&P.iap[id])return;if(!p){toast('Mağaza bilgisi henüz gelmedi, biraz sonra dene.');return}
   if(priceTL(p)>IAP_CAP-P.spent+.01){toast(`Kişi başı ${IAP_CAP} TL harcama sınırına ulaştın.`);return}
   if(BILL.busy)return;BILL.busy=id;if(!iapCall('iapBuy',{id})){BILL.busy='';toast('Satın alma şu an açılamadı.')}renderIap()});
 $('#btnRestore').onclick=()=>{if(iapCall('iapRestore'))toast('Satın alımlar kontrol ediliyor…')};
@@ -2478,6 +2586,97 @@ function econTick(dt){if(satOn())satTick(dt);
   if(G.boost&&G.t>=G.boost.until)G.boost=null;
   if(G.budget){const d=dayOf(G.t);if(G.payDay==null)G.payDay=d;if(d!==G.payDay){G.payDay=d;budgetDay()}}}
 
+// ---------- 4.1: çevrimiçi sıralama, arkadaşa meydan okuma, ilk oyun eğitimi ----------
+// Paylaşım: Android'de AndroidTTS.share, iPhone uygulamasında kabuk paylaşım penceresi, tarayıcıda Web Share ya da panoya kopyalama
+function shareText(text){try{if(window.AndroidTTS&&AndroidTTS.share){AndroidTTS.share(text);return}}catch(e){}
+  try{if(window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.shell){webkit.messageHandlers.shell.postMessage({op:'share',text});return}}catch(e){}
+  if(navigator.share){navigator.share({text}).catch(()=>{});return}
+  try{navigator.clipboard.writeText(text).then(()=>toast('📋 Panoya kopyalandı, arkadaşına yapıştırıp gönder.'),()=>toast(text))}catch(e){toast(text)}}
+// Meydan okuma: kod aynı başlangıç hattını, ilk durakları, günün kuralını ve aynı yolcu sırasını (tohumlu rastgelelik) verir.
+// Kod biçimi: ABCDE ya da ABCDE-150 (150 = meydan okuyanın puanı)
+const SITE='https://maelstoorm.github.io/metro-game/';
+const RND0=Math.random;
+function chalMap(code){const r=rngOf(seedOf('meydan'+code)),cands=LINE_ORDER.filter(id=>LINEDEF[id].seq.length>=6&&LINEDEF[id].mode!=='brt');
+  return {d:'c'+code,line:cands[Math.floor(r()*cands.length)],mod:DMODS[Math.floor(r()*DMODS.length)],pos:r()}}
+const newCode=()=>{const A='ABCDEFGHJKLMNPRSTUVYZ23456789';let s='';for(let i=0;i<5;i++)s+=A[Math.floor(RND0()*A.length)];return s};
+function parseCode(t){const m=String(t||'').toUpperCase().replace(/\s+/g,'').match(/([A-Z0-9]{5})(?:-(\d{1,6}))?/);return m?{code:m[1],target:m[2]?+m[2]:0}:null}
+function startChal(code,target){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro','#pauseMenu','#chalModal'])$(m).hidden=true;clearSave();
+  const dm=chalMap(code);Math.random=rngOf(seedOf('yolcu'+code));newGame(null,null,dm);G.chal={code,target:target||0};G.paused=false;hud(true);
+  toast(`⚔ Meydan okuma ${code}: ${LABEL(dm.line)} ile başla. ${dm.mod.ic} ${dm.mod.n}.`+(target?` Yenmen gereken skor: ${target}.`:' Oyun bitince kodu skorunla arkadaşına gönder.'))}
+function chalMsg(code,score){return `Raylı İstanbul'da sana meydan okuyorum! Aynı haritada ${score} puan yaptım, beni geçebilir misin? Kod: ${code}-${score}\n${SITE}?c=${code}-${score}`}
+function openChal(){$('#chalModal').hidden=false;$('#chalCode').value='';hud(true)}
+$('#btnChal').onclick=openChal;
+$('#btnChalNew').onclick=()=>startChal(newCode(),0);
+$('#btnChalGo').onclick=()=>{const p=parseCode($('#chalCode').value);if(!p){toast('Kod 5 harf/rakamdan oluşur, ör. K7Q2M-150.');return}startChal(p.code,p.target)};
+$('#btnChalClose').onclick=()=>{$('#chalModal').hidden=true;hud(true)};
+$('#btnShareChal').onclick=()=>{if(G.chal)shareText(chalMsg(G.chal.code,G.score))};
+// Çevrimiçi sıralama (Firebase). FB boşsa bütün çevrimiçi kısımlar gizli kalır ve oyun hiçbir yere bağlanmaz.
+// Yalnızca takma ad, skor ve Firebase'in anonim kimliği gönderilir. Bağlantı yoksa oyun sessizce yerel çalışmaya devam eder.
+const FB={apiKey:'',projectId:''};
+const fbOn=()=>!!(FB.apiKey&&FB.projectId);
+P.nick=load('mi-nick','');
+let FBA=load('mi-fb',null);
+const fsBase=()=>`https://firestore.googleapis.com/v1/projects/${FB.projectId}/databases/(default)/documents`;
+async function fbAuth(){if(FBA&&FBA.exp>Date.now()+60e3)return FBA;let j;
+  if(FBA&&FBA.refresh){const r=await fetch('https://securetoken.googleapis.com/v1/token?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(FBA.refresh)});
+    j=await r.json();if(j.id_token){FBA={uid:j.user_id,token:j.id_token,refresh:j.refresh_token,exp:Date.now()+(+j.expires_in||3600)*1000};save('mi-fb',FBA);return FBA}}
+  const r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+FB.apiKey,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"returnSecureToken":true}'});
+  j=await r.json();if(!j.idToken)throw new Error('auth');FBA={uid:j.localId,token:j.idToken,refresh:j.refreshToken,exp:Date.now()+(+j.expiresIn||3600)*1000};save('mi-fb',FBA);return FBA}
+const isoWeek=()=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+3-(d.getDay()+6)%7);const w1=new Date(d.getFullYear(),0,4);return d.getFullYear()+'-H'+(1+Math.round(((d-w1)/864e5-3+(w1.getDay()+6)%7)/7))};
+const cleanNick=s=>String(s||'').replace(/[<>&"\\]/g,'').replace(/\s+/g,' ').trim().slice(0,16);
+function boardOf(){if(!G||G.chap||G.region||G.budget)return null;if(G.chal)return 'c'+G.chal.code;if(G.daily)return 'd'+G.daily;return 'w'+isoWeek()}
+let FBEST=load('mi-fbbest',{});
+async function fbSubmit(period,score){if(!fbOn()||!P.nick||score<=0)return false;if((FBEST[period]||0)>=score)return true;const a=await fbAuth();
+  const r=await fetch(`${fsBase()}/boards/${period}/scores/${a.uid}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+a.token},
+    body:JSON.stringify({fields:{name:{stringValue:P.nick},score:{integerValue:String(score)},t:{integerValue:String(Date.now())}}})});
+  if(r.ok||r.status===403){FBEST[period]=Math.max(FBEST[period]||0,score);save('mi-fbbest',FBEST)}return r.ok}
+async function fbTop(period){const r=await fetch(`${fsBase()}/boards/${period}:runQuery`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({structuredQuery:{from:[{collectionId:'scores'}],orderBy:[{field:{fieldPath:'score'},direction:'DESCENDING'}],limit:50}})});
+  const j=await r.json();return (Array.isArray(j)?j:[]).filter(x=>x.document).map(x=>({uid:x.document.name.split('/').pop(),name:(x.document.fields.name||{}).stringValue||'?',score:+((x.document.fields.score||{}).integerValue||0)}))}
+function topHtml(list,limit){const me=FBA&&FBA.uid;if(!list.length)return '<p class="muted" style="margin:6px 0 0">Henüz kimse yok. İlk sen ol!</p>';
+  return `<ol>${list.slice(0,limit).map(e=>`<li class="${e.uid===me?'new':''}"><span><b>${e.score}</b> puan</span><span>${esc(e.name)}</span></li>`).join('')}</ol>`}
+let obTab='d';
+async function renderOnline(){const el=$('#onlineBox');if(!el)return;if(!fbOn()){el.hidden=true;return}el.hidden=false;
+  const per=obTab==='d'?'d'+dayKey():'w'+isoWeek();
+  el.innerHTML=`<h3>🌍 Türkiye sıralaması</h3><div class="opts" style="margin:6px 0"><button data-ob="d" aria-pressed="${obTab==='d'}">Günün haritası</button><button data-ob="w" aria-pressed="${obTab==='w'}">Bu hafta (Oyna)</button></div>`+
+    (P.nick?'':nickForm())+'<div id="obList"><p class="muted" style="margin:6px 0 0">Yükleniyor…</p></div>';
+  try{const l=await fbTop(per);const b=$('#obList');if(b)b.innerHTML=topHtml(l,20)}catch(e){const b=$('#obList');if(b)b.innerHTML='<p class="muted" style="margin:6px 0 0">Sıralamaya bağlanılamadı. İnternet bağlantını kontrol et.</p>'}}
+const nickForm=()=>`<div class="nick"><input class="chip" data-nick maxlength="16" placeholder="Takma adın" aria-label="Takma ad"><button class="chip" data-nicksave>Katıl</button></div><p class="muted" style="margin:4px 0 0;font-size:12px">Sıralamada yalnızca takma adın ve skorun görünür.</p>`;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-ob]');if(t){obTab=t.dataset.ob;renderOnline();return}
+  const s=e.target.closest('[data-nicksave]');if(s){const inp=s.parentElement.querySelector('[data-nick]'),n=cleanNick(inp&&inp.value);if(n.length<2){toast('Takma ad en az 2 harf olsun.');return}
+    P.nick=n;save('mi-nick',n);toast(`Takma adın: ${n}`);if(!$('#achModal').hidden)renderOnline();if(G&&G.over)overOnline();const sn=$('#setNick');if(sn)sn.value=n}});
+$('#setNick').addEventListener('change',e=>{const n=cleanNick(e.target.value);P.nick=n;save('mi-nick',n);e.target.value=n});
+async function overOnline(){const el=$('#overOnline'),per=boardOf();if(!el)return;if(!fbOn()||!per||G.score<=0){el.hidden=true;return}el.hidden=false;
+  if(!P.nick){el.innerHTML='🌍 Türkiye sıralamasına girmek için takma ad seç:'+nickForm();return}
+  el.textContent='🌍 Sıralamaya gönderiliyor…';
+  try{await fbSubmit(per,G.score);const l=await fbTop(per),k=l.findIndex(e=>FBA&&e.uid===FBA.uid);
+    el.innerHTML=(G.chal?'⚔ Bu meydan okumanın sıralaması':G.daily?'🌍 Günün haritası sıralaması':'🌍 Haftanın sıralaması')+(k>=0?`: <b>${k+1}.</b> sıradasın`:': ilk 50\'nin dışında')+topHtml(l,5)}
+  catch(e){el.textContent='🌍 Sıralamaya bağlanılamadı (internet yok). Skorun bu cihazda kayıtlı.'}}
+// Oyun bitişi: meydan okuma sonucu, sıralama ve (uygulamada) sade bir paket önerisi
+function afterOver(){const t=$('#overText');
+  if(G.chal){const c=G.chal;t.textContent=c.target?(G.score>c.target?`puan topladın. Arkadaşının skoru ${c.target}: kazandın! 🎉 Skorunu ona geri gönder.`:G.score===c.target?`puan topladın. Arkadaşınla berabere (${c.target}).`:`puan topladın. Arkadaşının skoru ${c.target}, bu sefer o kazandı. Yeniden dene!`)
+      :`puan topladın. Kodu skorunla arkadaşına gönder, aynı haritada seni geçmeye çalışsın.`;}
+  $('#btnShareChal').hidden=!G.chal;overOnline();
+  const of=$('#overOffer'),it=IAP.find(x=>x.id==='baslangic'),p=BILL.prods.baslangic;
+  of.hidden=!(iapPlatform()&&p&&!P.iap.baslangic&&(ST.games||0)>=2);if(!of.hidden)of.innerHTML=`🎁 <b>Başlangıç paketi</b>: ${esc(it.d)} <button class="chip buy" data-iap="baslangic">${esc(p.price)}</button>`}
+$('#overOffer').addEventListener('click',e=>{const b=e.target.closest('[data-iap]');if(b){openShop()}});
+// İlk oyun eğitimi: ilk Oyna oyununda üç kısa adım. Birinci adımda zaman durur.
+let TUT=null;
+function tutStart(){if(load('mi-tut',false)||!G||G.chap||G.region||G.daily||G.budget)return;TUT={step:1,t:0};tutShow()}
+function tutShow(){const el=$('#coach');if(!TUT){el.hidden=true;return}const rv=G.st.filter(s=>s.revealed);
+  const txt=TUT.step===1?`👆 Bir istasyona dokun, parmağını kaldırmadan başka bir istasyona sürükle${rv.length>1?` (ör. ${rv[0].name} → ${rv[1].name})`:''}. İlk hattın çizilir. Sen çizene kadar zaman durur.`
+    :TUT.step===2?'🚇 Hattında bir araç çalışıyor. Daha çok yolcu taşımak için alttaki Araç sayısına dokun ya da sürükleyip hattın üstüne bırak.'
+    :'🎯 Her yolcunun şekli gideceği yerin türü. Kalabalık durağa hat ya da araç ekle: bir durak taşarsa oyun biter. İyi yolculuklar!';
+  $('#coachText').textContent=txt;$('#coachSkip').textContent=TUT.step===3?'Anladım':'Geç';el.style.top=(insetTop+4)+'px';el.hidden=false}
+function tutTick(){if(!TUT)return;const tr=G.lines.reduce((a,L)=>a+L.trains.length,0);
+  if(TUT.step===1&&G.lines.some(L=>L.st.length>=2)){TUT.step=2;TUT.t=G.t;tutShow()}
+  else if(TUT.step===2&&(tr>=2||G.t-TUT.t>DAY*.6)){TUT.step=3;tutShow()}}
+function tutEnd(){TUT=null;save('mi-tut',true);$('#coach').hidden=true}
+$('#coachSkip').onclick=tutEnd;
+// Bağlantıyla gelen meydan okuma (web: ?c=KOD-SKOR)
+function chalFromUrl(){try{const q=new URLSearchParams(location.search).get('c'),p=q&&parseCode(q);if(!p)return;history.replaceState(null,'',location.pathname);
+  $('#chalCode').value=p.code+(p.target?'-'+p.target:'');$('#chalModal').hidden=false}catch(e){}}
+
 // ---------- Başlat ----------
 readTokens();
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTokens)}catch(e){}
@@ -2498,14 +2697,14 @@ document.addEventListener('visibilitychange',()=>appHidden(document.hidden));
 setSound(SND.on);applyTheme();$('#btnReal').setAttribute('aria-pressed',String(showReal));
 newGame();hud(true);renderDaily();renderLive();renderAchCount();setTimeout(checkAch,500);
 if(CFG.lang==='en')applyLang();
-loginOpen();setTimeout(iapAsk,3000);setTimeout(iapAsk,12000);
+loginOpen();chalFromUrl();setTimeout(iapAsk,3000);setTimeout(iapAsk,12000);
 // Açılış animasyonu: dokununca geçer, yoksa ~3,4 sn sonra kaybolur
 (function(){const sp=$('#splash');if(!sp)return;let done=false;
   const end=()=>{if(done)return;done=true;sp.classList.add('out');setTimeout(()=>sp.remove(),650)};
   sp.addEventListener('click',end);setTimeout(end,matchMedia('(prefers-reduced-motion:reduce)').matches?900:3400)})();
 let last=performance.now(),hudT=0,drawAcc=1;
 function frame(now){const rdt=Math.min(.05,(now-last)/1000);last=now;
-  if(!G.paused&&!G.over&&!G.modal){const d=rdt*PACE*(G.speed===.5?.5:1);step(d);if(G.speed===2&&!G.over&&!G.modal)step(d)}
+  if(!G.paused&&!G.over&&!G.modal&&!(TUT&&TUT.step===1)){const d=rdt*PACE*(G.speed===.5?.5:1);step(d);if(G.speed===2&&!G.over&&!G.modal)step(d)}
   if(!manual&&!drag&&!pinch){const f=fitTarget(),k=Math.min(1,rdt*1.8);V.s+=(f.s-V.s)*k;V.cx+=(f.cx-V.cx)*k;V.cy+=(f.cy-V.cy)*k;
     if(Math.abs(f.s-V.s)<f.s*1e-3&&Math.abs(f.cx-V.cx)*V.s<.3&&Math.abs(f.cy-V.cy)*V.s<.3){V.s=f.s;V.cx=f.cx;V.cy=f.cy}}
   // Performans: duraklatılmışken (dokunma yoksa) saniyede 4 kare, pil modunda 30 kare/sn çiz
