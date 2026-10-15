@@ -353,7 +353,6 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <li>Gece 00:30-06:00 arası metrolar kapanır (cuma ve cumartesi geceleri açık). Metrobüs 24 saat çalışır; hattı seçip 🌙 ile gece seferi verebilirsin.</li>
           <li>Günün haritası her gün başka bir hat ve başka bir kuralla başlar.</li>
           <li>Duraklatınca 📷 Fotoğraf ile kurduğun ağın resmini kaydedebilirsin.</li>
-          <li>Bir hattı seçince o hattın ilk aracında gong ve durak anonsu duyarsın.</li>
           <li>Yolcu memnuniyeti duraklar kalabalıklaştıkça düşer. Yüksek memnuniyet puanı 1,25 katına çıkarır, düşük memnuniyet azaltır.</li>
           <li>Bazı hatlar (M12, M7) gerçekte olduğu gibi önce inşaatta bekler. Açılınca çevresinde yolcu artar.</li>
           <li>Bütçe modunda hat ve araç para tutar, her yolcu bilet parası getirir. Kasa 3 gün eksi kalırsa iflas edersin.</li>
@@ -459,10 +458,6 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <div class="set-group"><h3>Ses</h3>
         <div class="set-row"><div class="lbl"><b>Ses düzeyi</b><span id="volLbl">%70</span></div><input type="range" id="setVol" min="0" max="100" step="5" aria-label="Ses düzeyi"></div>
         <div class="set-row"><div class="lbl"><b>Araç sesleri</b><span>Motor, fren ve kapı sesleri</span></div><button class="switch" role="switch" data-cfg="vehicle" aria-label="Araç sesleri"></button></div>
-        <div class="set-row"><div class="lbl"><b>Gong ve durak anonsu</b><span>Metro ve tramvayda seçili hattın ilk aracında çalar. Metrobüste anons yok.</span></div><button class="switch" role="switch" data-cfg="announce" aria-label="Gong ve durak anonsu"></button></div>
-        <div class="set-row"><div class="lbl"><b>Anons sesi</b><span id="voiceHint">Kadın sesi öncelikli</span></div><select id="setVoice" class="chip" style="max-width:52%"></select></div>
-        <div class="set-row"><div class="lbl"><b>İngilizce tekrar</b><span>"Next station" kısmını da aynı Türkçe kadın sesi okur</span></div><button class="switch" role="switch" data-cfg="english" aria-label="İngilizce tekrar"></button></div>
-        <div class="set-row"><div class="lbl"><b>Anonsu dene</b></div><button class="chip" id="btnVoiceTest">▶ Dinle</button></div>
         <div class="set-row"><div class="lbl"><b>Titreşim</b><span>Seviye atlarken ve oyun bitince</span></div><button class="switch" role="switch" data-cfg="vibrate" aria-label="Titreşim"></button></div>
         <div class="set-row"><div class="lbl"><b>Hatırlatma bildirimi</b><span>Bir süre oynamazsan telefonuna oyuna çağıran bildirim gelir (uygulamada)</span></div><button class="switch" role="switch" data-cfg="remind" aria-label="Hatırlatma bildirimi"></button></div>
       </div>
@@ -471,7 +466,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
           <div class="opts" data-opt="diff"><button data-v="kolay">Kolay</button><button data-v="normal">Normal</button><button data-v="zor">Zor</button></div></div>
         <div class="set-row"><div class="lbl"><b>Başlangıç hızı</b><span>Oyun bu hızla açılır</span></div>
           <div class="opts" data-opt="speed"><button data-v="0.5">Yavaş</button><button data-v="1">1×</button><button data-v="2">2×</button></div></div>
-        <div class="set-row"><div class="lbl"><b>Dil / Language</b><span>Durak adları ve anonslar Türkçe kalır</span></div>
+        <div class="set-row"><div class="lbl"><b>Dil / Language</b><span>Durak adları Türkçe kalır</span></div>
           <div class="opts" data-opt="lang"><button data-v="tr">Türkçe</button><button data-v="en">English</button></div></div>
       </div>
       <div class="set-group"><h3>Harita</h3>
@@ -491,7 +486,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
         <div class="set-row" id="rowAdPrivacy" hidden><div class="lbl"><b>Reklam gizlilik seçenekleri</b><span>Reklamlar için verdiğin izni değiştir</span></div><button class="chip" id="btnAdPrivacy">Aç</button></div>
         <div class="set-row" id="rowRestore" hidden><div class="lbl"><b>Satın alımları geri yükle</b><span>Reklamsız + destekçi paketini bu cihazda yeniden aç</span></div><button class="chip" id="btnRestore">Geri yükle</button></div>
       </div>
-      <p class="credit">Raylı İstanbul · sürüm 4.0 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
+      <p class="credit">Raylı İstanbul · sürüm 4.0.1 · Metrobüs motor sesi: Egemen'in Altunizade kaydı · <span class="studio-name">MAELSTROM STUDIO</span>. Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.</p>
       <button class="primary" id="btnSettingsClose" style="margin-top:12px">Kapat</button>
     </div>
   </div>
@@ -957,7 +952,7 @@ function step(dt){
     for(const tr of L.trains){
       if(tr.dwell>0){tr.dwell-=dt;const S=L.st[tr.i];if(tr.dwell<=0&&lineClosed(L)){tr.dwell=.2;tr.doors=true;continue}
         if(!tr.doors&&tr.dwell<.6){tr.doors=true;if(S&&onScreen(S))sfx('door',L.mode==='brt')}
-        if(tr.dwell<=0&&S){if(onScreen(S))sfx('depart',L.mode==='brt');if(G.sel===L.id&&L.trains[0]===tr){const N=L.st[tr.i+tr.dir];if(N)announce(L,N)}}
+        if(tr.dwell<=0&&S){if(onScreen(S))sfx('depart',L.mode==='brt')}
         continue}
       const a=L.st[tr.i],b=L.st[tr.i+tr.dir];if(!a||!b){arrive(tr);continue}
       const real=REALADJ.has(L.id+':'+Math.min(a.i,b.i)+'-'+Math.max(a.i,b.i));
@@ -1406,7 +1401,7 @@ function drawEvent(){if(!G.ev)return;const e=evDef(),t=performance.now()/1000;
 
 
 // ---------- Ses ----------
-// Bütün sesler Web Audio ile üretilir; anons cihazın Türkçe sesiyle okunur (speechSynthesis).
+// Bütün sesler Web Audio ile üretilir. Durak anonsu yok (4.0.1'de kaldırıldı).
 const SND={on:load('mi-sound',true),c:null,m:null,hum:null,last:{},speakAt:0,nb:null};
 function audioInit(){
   if(SND.c){try{SND.c.resume()}catch(e){}return}
@@ -1464,53 +1459,12 @@ function vvvf(t,up){const c=SND.c,o=c.createOscillator(),g=c.createGain(),bp=c.c
   ng.gain.setValueAtTime(up?0:.06,t);ng.gain.linearRampToValueAtTime(up?.06:0,t+D);n.connect(nf).connect(ng).connect(SND.m);n.start(t,Math.random());n.stop(t+D+.1);
   if(!up){tone(1850,.5,'sine',.006,t+D-.9,1700);hiss(.6,.05,'highpass',3000,t+D-.2)}}
 function sfx(kind,bus){
-  if(!SND.c||!SND.on||SND.c.state!=='running')return;if(kind==='chime'?!CFG.announce:!CFG.vehicle)return;const t=SND.c.currentTime,key=kind+(bus?'b':'');
+  if(!SND.c||!SND.on||SND.c.state!=='running')return;if(!CFG.vehicle)return;const t=SND.c.currentTime,key=kind+(bus?'b':'');
   if(SND.last[key]&&t-SND.last[key]<.45)return;SND.last[key]=t;
   if(kind==='depart'){if(bus&&SND.rec&&SND.rec.depart){hiss(.35,.06,'highpass',3200,t);playRec('depart',.3,t+.1)}else if(bus){hiss(.35,.07,'highpass',3200,t);diesel(t+.15,4.2,[[0,28],[1.2,82],[1.7,57],[3.6,105],[4.0,96]],.14)}else vvvf(t,true)}
   else if(kind==='arrive'){if(bus){diesel(t,1.8,[[0,70],[1.6,30]],.07);hiss(.7,.11,'highpass',2400,t+1.5)}else vvvf(t,false)}
   else if(kind==='door'){if(bus){hiss(.55,.08,'bandpass',1500,t);[0,.22,.44].forEach(d=>tone(1250,.12,'square',.012,t+.1+d))}else{for(let i=0;i<3;i++)tone(2350,.13,'sine',.03,t+i*.24);tone(85,.18,'sine',.12,t+.8);hiss(.3,.03,'bandpass',900,t+.75)}}
-  else if(kind==='chime'){
-    // Metrobüs: inen iki nota (Si4 → Sol4), tek harmonikli yumuşak kare tını. Metro: çıkan üç notalı çan (Mi4 → La4 → Si4), uzun sönüm.
-    if(bus){[[500,0,.32],[396,.3,1.2]].forEach(([f,d,len])=>{tone(f,len,'sine',.09,t+d);tone(f*3,len*.8,'sine',.035,t+d);tone(f*5,len*.5,'sine',.012,t+d)})}
-    else{[[329.6,0],[440,.4],[493.9,.8]].forEach(([f,d])=>{tone(f,2.4,'sine',.075,t+d);tone(f*2,1.4,'sine',.035,t+d);tone(f*3,.8,'sine',.015,t+d)})}}
 }
-// Anons sesi: kadın sesi öncelikli, sakin ve kısık. Kullanıcı Ayarlar'dan başka bir Türkçe ses seçebilir.
-const FEMALE=/yelda|filiz|emel|seda|elif|female|kad[ıi]n|google t[üu]rk|x-cfs|x-efs|x-ama|smtf/i, MALE=/tolga|cem\b|ahmet|\bmale|erkek|x-mfm|x-tmc|smtm/i;
-function voicesFor(lang){try{return speechSynthesis.getVoices().filter(v=>(v.lang||'').toLowerCase().replace('_','-').startsWith(lang))}catch(e){return []}}
-function trVoice(){const vs=voicesFor('tr');if(!vs.length)return null;
-  return vs.find(v=>v.name===CFG.voice)||vs.find(v=>FEMALE.test(v.name)&&/natural|online|neural|network/i.test(v.name))||vs.find(v=>FEMALE.test(v.name))||vs.find(v=>!MALE.test(v.name))||vs[0]}
-function enVoice(){const vs=voicesFor('en');return vs.find(v=>/samantha|zira|female|google us english|karen|serena/i.test(v.name))||vs.find(v=>!/male|daniel|alex|david|fred/i.test(v.name))||vs[0]}
-// Türkçe ek: ünlü uyumu + sert ünsüz (Levent'ten, Hisarüstü'ne, Yenikapı'ya)
-const SPOKEN=n=>n.replace(/[()]/g,' ').replace(/\s*[\/–-]\s*/g,' ').replace(/\s+/g,' ').trim();
-const N_BUF=/(üstü|altı|önü|arkası|başı|yolu|köyü|içi|[sş][ıiuü])$/i, N_NOT=/^(piyer loti)$/i;
-function ek(name,kind){const w=SPOKEN(name),low=w.toLocaleLowerCase('tr'),vs=low.match(/[aıoueiöü]/g)||['a'],v=vs[vs.length-1],back='aıou'.includes(v);
-  const endV=/[aıoueiöü]$/.test(low),nb=endV&&!N_NOT.test(low)&&(N_BUF.test(low)||/\s/.test(w));
-  if(kind==='abl'){const a=back?'an':'en';return w+"'"+(nb?'nd'+a:endV?'d'+a:/[çfhkpsşt]$/.test(low)?'t'+a:'d'+a)}
-  const a=back?'a':'e';return w+"'"+(nb?'n'+a:endV?'y'+a:a)}
-const KIND={subway:'metro hattına',suburban_rail:'banliyö hattına',tram:'tramvay hattına',heritage_tram:'nostaljik tramvay hattına',funicular:'füniküler hattına',heritage_funicular:'tarihi tünel hattına',cable_car:'teleferik hattına',brt:'metrobüs hattına'};
-const SAY=id=>id==='34'?'Metrobüs':id==='B1'?'Marmaray':id;
-function transferText(S,O){const seq=O.seq,a=seq[0],b=seq[seq.length-1],k=SAY(O.id)+(O.id==='34'||O.id==='B1'?' hattına':' '+KIND[O.mode]);
-  const ends=[a,b].filter(n=>n!==S.i).map(n=>NODES[n].name);
-  if(ends.length===1)return `${ek(SPOKEN(S.name),'abl')} ${ek(SPOKEN(ends[0]),'dat')} gidecek yolcularımızın ${k} aktarma yapması gerekmektedir.`;
-  return `${SPOKEN(ends[0])} ve ${SPOKEN(ends[1])} yönüne gidecek yolcularımızın ${k} aktarma yapması gerekmektedir.`}
-// İngilizce kısım da aynı Türkçe kadın sesiyle okunur; Türkçe ses doğru telaffuz etsin diye okunuşuna göre yazıldı.
-const EN_NEXT='Nekst steyşın';
-function announceText(L,S){const bus=L.mode==='brt',tram=L.mode.includes('tram');
-  const others=[...new Set([...S.lines,...(S.walk!=null?NODES[S.walk].lines:[])])].filter(l=>l!==L.id&&SAY(l)!==SAY(L.id)&&lineById(l)&&lineById(l).unlocked);
-  let tr=bus?`Bir sonraki durak, ${SPOKEN(S.name)}.`:tram?`Gelecek durak, ${SPOKEN(S.name)}.`:`Gelecek istasyon, ${SPOKEN(S.name)}.`;
-  if(CFG.english)tr+=` ${EN_NEXT}, ${SPOKEN(S.name)}.`;
-  for(const id of others.slice(0,2))tr+=' '+transferText(S,LINEDEF[id]);
-  if(others.length>2)tr+=` Ayrıca ${others.slice(2).map(SAY).join(', ')} hatlarına da aktarma yapabilirsiniz.`;
-  return {tr,en:''}}
-function speakNow(t){
-  const vol=Math.min(1,.7*CFG.vol/70);
-  if(window.AndroidTTS){try{AndroidTTS.speak(t.tr,'',CFG.voice||'',vol)}catch(e){}return}
-  if(!window.speechSynthesis)return;const v=trVoice();if(!v)return;
-  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.tr);u.lang='tr-TR';u.voice=v;u.rate=.97;u.pitch=1.0;u.volume=vol;speechSynthesis.speak(u)}catch(e){}}
-function announce(L,S){
-  if(!SND.c||!SND.on||!CFG.announce||L.mode==='brt')return;const now=performance.now();if(now<SND.speakAt)return;SND.speakAt=now+15000;
-  const bus=false;sfx('chime',bus);const t=announceText(L,S);
-  setTimeout(()=>{if(SND.on&&CFG.announce)speakNow(t)},bus?1900:2500)}
 const onScreen=s=>{const X=sx(s.x),Y=sy(s.y);return X>-20&&X<W+20&&Y>-20&&Y<H+20};
 let humT=0;
 function humTick(dt){humT+=dt;if(humT<.4||!SND.hum)return;humT=0;let e=0,b=0;
@@ -1784,27 +1738,16 @@ function renderSettings(){
   for(const b of document.querySelectorAll('#settingsModal [data-cfg]'))b.setAttribute('aria-checked',String(!!CFG[b.dataset.cfg]));
   for(const g of document.querySelectorAll('#settingsModal [data-opt]'))for(const b of g.children)b.setAttribute('aria-pressed',String(String(CFG[g.dataset.opt])===b.dataset.v));
   $('#btnReset').textContent=resetArm?'Eminim, sıfırla':'Sıfırla'}
-function fillVoices(){const sel=$('#setVoice');let vs=[];
-  if(window.AndroidTTS){try{vs=JSON.parse(AndroidTTS.voices()||'[]').map(v=>typeof v==='string'?{n:v,l:v,g:0}:v)}catch(e){}}
-  else{let f=0,m=0,o=0;vs=voicesFor('tr').map(v=>{const g=FEMALE.test(v.name)?1:MALE.test(v.name)?-1:0;return {n:v.name,g,l:(g>0?'Kadın sesi '+(++f):g<0?'Erkek sesi '+(++m):'Ses '+(++o))+' · '+v.name}})}
-  const fem=vs.some(v=>v.g>0);
-  sel.innerHTML=`<option value="">Otomatik (en iyi kadın sesi)</option>`+vs.map(v=>`<option value="${esc(v.n)}">${esc(v.l)}</option>`).join('');sel.value=vs.some(v=>v.n===CFG.voice)?CFG.voice:'';
-  $('#voiceHint').textContent=!vs.length?'Bu cihazda Türkçe ses yok, sadece gong çalar':fem?`${vs.length} Türkçe ses bulundu, kadın sesi otomatik seçilir`:'Kadın sesi bulunamadı. Telefon Ayarları > Metin okuma çıkışı > Google Konuşma Hizmetleri > Türkçe ses verilerini indir.'}
 // Android uygulamasında (AB ve Birleşik Krallık gibi yerlerde) reklam izni ayarlardan yeniden açılabilmeli. Web sürümünde satır gizli kalır.
 function adPrivacyRow(){let on=false;try{on=!!(window.AndroidTTS&&AndroidTTS.privacyOptionsRequired&&AndroidTTS.privacyOptionsRequired())}catch(e){}$('#rowAdPrivacy').hidden=!on}
 $('#btnAdPrivacy').onclick=()=>{try{AndroidTTS.showPrivacyOptions()}catch(e){}};
-function openSettings(){fillVoices();adPrivacyRow();setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
+function openSettings(){adPrivacyRow();setWasPaused=G.paused;G.paused=true;resetArm=0;renderSettings();$('#settingsModal').hidden=false;hud(true)}
 $('#btnSettings').onclick=openSettings;$('#btnSettings2').onclick=openSettings;
 $('#btnSettingsClose').onclick=()=>{$('#settingsModal').hidden=true;G.paused=setWasPaused;hud(true)};
-$('#setVoice').addEventListener('change',e=>{CFG.voice=e.target.value;saveCfg()});
-$('#btnVoiceTest').onclick=()=>{audioInit();SND.speakAt=0;const L=lineById('M2'),S=G.st.find(x=>x.name==='Taksim');if(!SND.on)setSound(true);
-  sfx('chime',false);setTimeout(()=>speakNow(announceText(L,S)),2500)};
-try{speechSynthesis.onvoiceschanged=()=>{if(!$('#settingsModal').hidden)fillVoices()}}catch(e){}
 $('#setVol').addEventListener('input',e=>{CFG.vol=+e.target.value;saveCfg();audioInit();applyVol();$('#volLbl').textContent='%'+CFG.vol});
 $('#settingsModal').addEventListener('click',e=>{
   const sw=e.target.closest('[data-cfg]');if(sw){const k=sw.dataset.cfg;CFG[k]=!CFG[k];saveCfg();if(k==='remind'){try{window.AndroidTTS&&AndroidTTS.setReminders&&AndroidTTS.setReminders(!!CFG.remind)}catch(e){}}
     if(k==='real'){showReal=CFG.real;$('#btnReal').setAttribute('aria-pressed',String(showReal))}
-    if(k==='announce'&&!CFG.announce){try{speechSynthesis.cancel()}catch(_){}try{window.AndroidTTS&&AndroidTTS.stop()}catch(_){}}
     if(k==='vibrate'&&CFG.vibrate)vib(40);
     renderSettings();return}
   const ob=e.target.closest('[data-opt] button');if(ob){const k=ob.parentElement.dataset.opt;CFG[k]=ob.dataset.v;saveCfg();
@@ -1923,7 +1866,6 @@ const I18N_EXACT={
 "Gece 00:30-06:00 arası metrolar kapanır (cuma ve cumartesi geceleri açık). Metrobüs 24 saat çalışır; hattı seçip 🌙 ile gece seferi verebilirsin.":"Metros close 00:30-06:00 (open Friday and Saturday nights). The metrobus runs 24 hours; select a line and tap 🌙 to give it night service.",
 "Günün haritası her gün başka bir hat ve başka bir kuralla başlar.":"The daily map starts with a different line and rule every day.",
 "Duraklatınca 📷 Fotoğraf ile kurduğun ağın resmini kaydedebilirsin.":"When paused, use 📷 Photo to save a picture of your network.",
-"Bir hattı seçince o hattın ilk aracında gong ve durak anonsu duyarsın.":"Select a line to hear the chime and station announcements on its first train.",
 "Oyna":"Play",
 "Yeni oyun başlat":"Start new game",
 "Anadolu Yakası":"Asian Side",
@@ -2024,14 +1966,7 @@ const I18N_EXACT={
 "Ses düzeyi":"Volume",
 "Araç sesleri":"Vehicle sounds",
 "Motor, fren ve kapı sesleri":"Engine, brake and door sounds",
-"Gong ve durak anonsu":"Chime & announcements",
-"Metro ve tramvayda seçili hattın ilk aracında çalar. Metrobüste anons yok.":"Plays on the selected line's first train on metro and tram. No announcements on the metrobus.",
-"Anons sesi":"Announcer voice",
-"Kadın sesi öncelikli":"Female voice preferred",
-"İngilizce tekrar":"English repeat",
 "\"Next station\" kısmını da aynı Türkçe kadın sesi okur":"The same Turkish female voice also reads \"Next station\"",
-"Anonsu dene":"Test announcement",
-"▶ Dinle":"▶ Listen",
 "Titreşim":"Vibration",
 "Seviye atlarken ve oyun bitince":"On level up and game over",
 "Hatırlatma bildirimi":"Reminder notification",
@@ -2077,7 +2012,6 @@ const I18N_EXACT={
 "Aç":"Open",
 ". Harita verisi © OpenStreetMap katkıcıları (ODbL). İlçe sınırları: istanbul-districts-geojson.":". Map data © OpenStreetMap contributors (ODbL). District borders: istanbul-districts-geojson.",
 "Otomatik (en iyi kadın sesi)":"Auto (best female voice)",
-"Bu cihazda Türkçe ses yok, sadece gong çalar":"No Turkish voice on this device; only the chime plays",
 "Kadın sesi bulunamadı. Telefon Ayarları > Metin okuma çıkışı > Google Konuşma Hizmetleri > Türkçe ses verilerini indir.":"No female voice found. Phone Settings > Text-to-speech output > Speech Services by Google > download Turkish voice data.",
 // ---- shop ----
 "jeton":"coins",
@@ -2168,7 +2102,7 @@ const I18N_EXACT={
 "Bütçe modunda hat ve araç para tutar, her yolcu bilet parası getirir. Kasa 3 gün eksi kalırsa iflas edersin.":"In Budget mode, lines and trains cost money and each passenger pays a fare. Stay in the red for 3 days and you go bankrupt.",
 "💰 Bütçe modu":"💰 Budget mode",
 "Dil / Language":"Language",
-"Durak adları ve anonslar Türkçe kalır":"Station names and announcements stay in Turkish",
+"Durak adları Türkçe kalır":"Station names stay in Turkish",
 "Satın alımları geri yükle":"Restore purchases",
 "Reklamsız + destekçi paketini bu cihazda yeniden aç":"Re-enable the ad-free + supporter pack on this device",
 "Geri yükle":"Restore",
