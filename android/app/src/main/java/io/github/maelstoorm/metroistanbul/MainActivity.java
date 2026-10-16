@@ -121,6 +121,12 @@ public class MainActivity extends Activity {
             return saveImageNow(base64, name);
         }
 
+        /** Oyun sonu tekrarı: video (base64, webm/mp4) Galeri > Movies > Raylı İstanbul klasörüne kaydedilir. */
+        @JavascriptInterface
+        public boolean saveVideo(String base64, String name, String mime) {
+            return saveVideoNow(base64, name, mime);
+        }
+
         @JavascriptInterface
         public void setReminders(boolean on) {
             ReminderReceiver.setEnabled(MainActivity.this, on);
@@ -554,6 +560,36 @@ public class MainActivity extends Activity {
             if (!dir.isDirectory() && !dir.mkdirs()) return false;
             try (FileOutputStream fos = new FileOutputStream(new File(dir, file))) {
                 fos.write(png);
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean saveVideoNow(String base64, String name, String mime) {
+        try {
+            byte[] data = Base64.decode(base64, Base64.DEFAULT);
+            String type = (mime == null || !mime.startsWith("video/")) ? "video/webm" : mime;
+            String file = (name == null || name.isEmpty()) ? "rayli-istanbul.webm" : name.replaceAll("[\\\\/:*?\"<>|]", "_");
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentValues cv = new ContentValues();
+                cv.put(MediaStore.MediaColumns.DISPLAY_NAME, file);
+                cv.put(MediaStore.MediaColumns.MIME_TYPE, type);
+                cv.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MOVIES + "/Raylı İstanbul");
+                ContentResolver cr = getContentResolver();
+                Uri uri = cr.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, cv);
+                if (uri == null) return false;
+                try (OutputStream os = cr.openOutputStream(uri)) {
+                    if (os == null) return false;
+                    os.write(data);
+                }
+                return true;
+            }
+            File dir = new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "Raylı İstanbul");
+            if (!dir.isDirectory() && !dir.mkdirs()) return false;
+            try (FileOutputStream fos = new FileOutputStream(new File(dir, file))) {
+                fos.write(data);
             }
             return true;
         } catch (Exception e) {
