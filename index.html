@@ -730,7 +730,9 @@ function newGame(chap,region,dm){if(!(dm&&String(dm.d)[0]==='c'))Math.random=RND
 const lineById=id=>G.lines.find(l=>l.id===id);
 // M2 yalnızca asıl hat (Yenikapı – Hacıosman); Sefaköy uzatması sadece kendi bölümünde (M2+)
 const sideSeq=(id,side)=>id==='M2'?chapSeq('M2'):LINEDEF[id].seq;
-function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of sideSeq(id,G.region))if(!G.region||sideOf(n)===G.region)G.st[n].inPool=true}}
+// Marmaray ve metrobüs gerçekte boğazı geçtiği için yaka modlarında da tam güzergâhla gelir
+const CROSS_SIDE=new Set(['B1','34']);
+function unlock(ids){for(const id of ids){const L=lineById(id);if(!L)continue;L.unlocked=true;for(const n of sideSeq(id,G.region))if(!G.region||CROSS_SIDE.has(id)||sideOf(n)===G.region)G.st[n].inPool=true}}
 function reveal(s){s.revealed=true;s.inPool=true;s.rt=G.t;s.spawn=3+Math.random()*4}
 function nearestToRevealed(cands,k){const rev=G.st.filter(s=>s.revealed);
   return cands.map(c=>{let d=1e9;for(const r of rev)d=Math.min(d,Math.hypot(c.x-r.x,c.y-r.y));return [d,c]}).sort((a,b)=>a[0]-b[0]).slice(0,k).map(a=>a[1])}
@@ -806,7 +808,7 @@ function openChaps(){chapWasPaused=G.paused;const L=$('#chapList');
     return `<button class="chap" data-chap="${id}" aria-disabled="${!open}" style="--c:${d.color}"><i>${open?'':'🔒︎ '}${chapLabel(id)}</i><span>${esc(chapName(id))}</span><span class="st">${'★'.repeat(r.stars)}${'☆'.repeat(3-r.stars)}</span><span class="n">Bölüm ${k+1} · hedef ${chapTarget(id)}${r.best?` · en iyi ${r.best}`:''}</span></button>`}).join('');
   G.paused=true;$('#chapModal').hidden=false;hud(true)}
 function startSide(side){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro','#pauseMenu'])$(m).hidden=true;clearSave();newGame(null,side);G.paused=false;hud(true);
-  toast(`${SIDES[side].name}: yalnızca bu yakanın hatları. Puan topladıkça ${G.levels.length-1} hat grubu daha açılacak.`)}
+  toast(`${SIDES[side].name}: bu yakanın hatları. Marmaray ve metrobüs karşı yakaya da geçer. Puan topladıkça ${G.levels.length-1} hat grubu daha açılacak.`)}
 function renderSides(){for(const k of Object.keys(SIDES)){const r=(P.side||{})[k]||{};$('#side_'+k).innerHTML=`${k==='asia'?'🌅':'🌉'} ${SIDES[k].name}${r.done?' ✓':''}${r.best?` · en iyi ${r.best}`:''}`}}
 function startChap(id){resumeOffer=false;$('#btnNew').hidden=true;for(const m of ['#chapModal','#chapDone','#overModal','#intro'])$(m).hidden=true;newGame(id);G.paused=false;hud(true);
   toast(`${chapLabel(id)} bölümü: ${chapTarget(id)} yolcu taşı. İstasyondan istasyona sürükleyerek hattı kur.`)}
@@ -2359,7 +2361,7 @@ const I18N_RX=[
 [/^🌙 Gece seferleri: 00:30-06:00 arası metrolar kapanır \(cuma ve cumartesi geceleri açık\)\. Metrobüs ve gece seferi verdiğin hatlar \((.+)\) çalışır\. Hattı seçip 🌙 ile değiştirebilirsin\.$/,
   (m,o)=>`🌙 Night service: metros close 00:30-06:00 (open Friday and Saturday nights). The metrobus and your night lines (${o==='yok'?'none':o}) keep running. Select a line and tap 🌙 to change.`],
 [/^(\S+) bölümü: (\d+) yolcu taşı\. İstasyondan istasyona sürükleyerek hattı kur\.$/,'Chapter $1: carry $2 passengers. Drag from station to station to build the line.'],
-[/^(Anadolu Yakası|Avrupa Yakası): yalnızca bu yakanın hatları\. Puan topladıkça (\d+) hat grubu daha açılacak\.$/,(m,s,n)=>`${I18N_EXACT[s]}: only this side's lines. ${n} more line groups unlock as you score.`],
+[/^(Anadolu Yakası|Avrupa Yakası): bu yakanın hatları\. Marmaray ve metrobüs karşı yakaya da geçer\. Puan topladıkça (\d+) hat grubu daha açılacak\.$/,(m,s,n)=>`${I18N_EXACT[s]}: this side's lines. Marmaray and the metrobus also cross to the other side. ${n} more line groups unlock as you score.`],
 [/^📅 Günün haritası: (\S+) ile başla\. (\S+) (.+?): (.+)$/,(m,l,ic,n,d)=>`📅 Daily map: start with ${l}. ${ic} ${I18N_EXACT[n]||n}: ${I18N_EXACT[d]||d}`],
 [/^(\S+) Derbi günü! (.+) çevresine taraftar akını var\.$/,(m,ic,n)=>`${ic} Derby day! Fans flooding around ${n.split(' ve ').join(' and ')}.`],
 [/^(\S+) Bayram yoğunluğu: (.+) tıklım tıklım\.$/,(m,ic,n)=>`${ic} Holiday rush: ${n.split(' ve ').join(' and ')} packed.`],
