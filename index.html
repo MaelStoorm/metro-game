@@ -393,7 +393,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
       <span class="eyebrow" id="lvlEyebrow">Seviye atladın</span>
       <h2 id="lvlTitle">Yeni hat açıldı</h2>
       <div class="unlock" id="lvlUnlock"></div>
-      <p class="muted">Depoya 1 araç ve 10 jeton eklendi. Yeni hattın istasyonları haritada belirmeye başladı.</p>
+      <p class="muted" id="lvlGift">Depoya 1 araç ve 10 jeton eklendi. Yeni hattın istasyonları haritada belirmeye başladı.</p>
       <button class="primary" id="btnLvlOk">Devam</button>
     </div>
   </div>
@@ -401,7 +401,7 @@ input[type=range]{flex:none;width:140px;accent-color:var(--ink)}
   <div class="overlay" id="weekModal" hidden>
     <div class="card">
       <span class="eyebrow" id="weekEyebrow">Yeni hafta</span>
-      <h2>Depoya 1 araç geldi</h2>
+      <h2 id="weekGift">Depoya 1 araç geldi</h2>
       <p class="lede">Bu hafta bir ödül daha seç.</p>
       <div class="choices">
         <button class="choice" data-reward="car"><strong>Vagon</strong><span>Bir araca takılır, kapasitesini artırır.</span></button>
@@ -989,13 +989,15 @@ function step(dt){
       const real=REALADJ.has(L.id+':'+Math.min(a.i,b.i)+'-'+Math.max(a.i,b.i));
       tr.t+=md.speed*VSPEED*dt*evSpeed(L);if(tr.t>=Math.hypot(b.x-a.x,b.y-a.y)){tr.i+=tr.dir;arrive(tr)}
       if(G.modal)return}}
-  if(G.t>=G.week*WEEK){G.week++;G.pool.train++;openWeek();dailyAdd('week',G.week);checkAch()}
+  if(G.t>=G.week*WEEK){G.week++;G.pool.train++;const wc=G.week%2===1;if(wc)G.pool.car++;$('#weekGift').textContent=wc?'Depoya 1 araç ve 1 vagon geldi':'Depoya 1 araç geldi';openWeek();dailyAdd('week',G.week);checkAch()}
 }
 function levelUp(){
   const ids=G.levels[G.level];G.level++;const later=unlockOrBuild(ids);
   const cands=G.st.filter(s=>s.inPool&&!s.revealed&&s.lines.some(l=>ids.includes(l)));
   for(const s of nearestToRevealed(cands,2))reveal(s);
-  network();G.pool.train++;P.coins+=10;G.earned+=10;persist();
+  // açılan her gerçek hat (füniküler/teleferik sayılmaz) kendi aracıyla gelir; inşaattaki hat açılınca aracını getirir
+  const now=ids.filter(id=>!later.includes(id)),nt=Math.max(1,now.filter(id=>LINEDEF[id].seq.length>3).length);
+  network();G.pool.train+=nt;P.coins+=10;G.earned+=10;persist();$('#lvlGift').textContent=`Depoya ${nt} araç ve 10 jeton eklendi. Yeni hattın istasyonları haritada belirmeye başladı.`;
   $('#lvlEyebrow').textContent=`Seviye ${G.level}`;
   $('#lvlTitle').textContent=G.region&&G.level===G.levels.length?`${SIDES[G.region].name}nın bütün hatları açıldı!`:ids.length>1?'Yeni hatlar açıldı':'Yeni hat açıldı';
   if(G.region&&G.level===G.levels.length){P.side=P.side||{};P.side[G.region]=Object.assign(P.side[G.region]||{},{done:true});persist();note(`🏁 ${SIDES[G.region].name} tamamlandı`)}
@@ -1977,7 +1979,7 @@ const I18N_EXACT={
 "Depoya 1 araç ve 10 jeton eklendi. Yeni hattın istasyonları haritada belirmeye başladı.":"1 train and 10 coins added to the depot. The new line's stations are appearing on the map.",
 "Devam":"Continue",
 "Yeni hafta":"New week",
-"Depoya 1 araç geldi":"1 train added to the depot",
+"Depoya 1 araç geldi":"1 train added to the depot","Depoya 1 araç ve 1 vagon geldi":"1 train and 1 car added to the depot",
 "Bu hafta bir ödül daha seç.":"Pick one more reward this week.",
 "Bir araca takılır, kapasitesini artırır.":"Attaches to a train and adds capacity.",
 "2 köprü/tünel hakkı":"2 bridges/tunnels",
@@ -2361,6 +2363,7 @@ const I18N_RX=[
 [/^🌙 Gece seferleri: 00:30-06:00 arası metrolar kapanır \(cuma ve cumartesi geceleri açık\)\. Metrobüs ve gece seferi verdiğin hatlar \((.+)\) çalışır\. Hattı seçip 🌙 ile değiştirebilirsin\.$/,
   (m,o)=>`🌙 Night service: metros close 00:30-06:00 (open Friday and Saturday nights). The metrobus and your night lines (${o==='yok'?'none':o}) keep running. Select a line and tap 🌙 to change.`],
 [/^(\S+) bölümü: (\d+) yolcu taşı\. İstasyondan istasyona sürükleyerek hattı kur\.$/,'Chapter $1: carry $2 passengers. Drag from station to station to build the line.'],
+[/^Depoya (\d+) araç ve 10 jeton eklendi\. Yeni hattın istasyonları haritada belirmeye başladı\.$/,(m,n)=>`${n} trains and 10 coins added to the depot. The new lines' stations are appearing on the map.`],
 [/^(Anadolu Yakası|Avrupa Yakası): bu yakanın hatları\. Marmaray ve metrobüs karşı yakaya da geçer\. Puan topladıkça (\d+) hat grubu daha açılacak\.$/,(m,s,n)=>`${I18N_EXACT[s]}: this side's lines. Marmaray and the metrobus also cross to the other side. ${n} more line groups unlock as you score.`],
 [/^📅 Günün haritası: (\S+) ile başla\. (\S+) (.+?): (.+)$/,(m,l,ic,n,d)=>`📅 Daily map: start with ${l}. ${ic} ${I18N_EXACT[n]||n}: ${I18N_EXACT[d]||d}`],
 [/^(\S+) Derbi günü! (.+) çevresine taraftar akını var\.$/,(m,ic,n)=>`${ic} Derby day! Fans flooding around ${n.split(' ve ').join(' and ')}.`],
@@ -2437,7 +2440,7 @@ function unlockOrBuild(ids){const now=[],later=[];for(const id of ids)(buildOn()
   unlock(now);G.build=G.build||{};for(const id of later)G.build[id]=G.t+BUILD_T;return later}
 function buildLeft(id){return Math.max(0,((G.build||{})[id]||0)-G.t)}
 const buildDays=id=>Math.max(1,Math.ceil(buildLeft(id)/DAY));
-function openBuild(id){delete G.build[id];unlock([id]);const L=lineById(id);
+function openBuild(id){delete G.build[id];unlock([id]);G.pool.train++;const L=lineById(id);
   const cands=G.st.filter(s=>s.inPool&&!s.revealed&&s.lines.includes(id));for(const s of nearestToRevealed(cands,3))reveal(s);network();
   G.boost={line:id,until:G.t+DAY*1.5,st:LINEDEF[id].seq};P.coins+=15;G.earned+=15;persist();
   toast(`🎉 ${LABEL(id)} hizmete açıldı! Çevresinde yolcu artıyor · +15 jeton`);vib([40,40,120]);lastBar='';ST.build=(ST.build||0)+1;save('mi-stat',ST);checkAch()}
