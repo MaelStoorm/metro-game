@@ -259,6 +259,18 @@ final class ShellViewController: UIViewController, WKNavigationDelegate, WKUIDel
             }
         case "copy":
             UIPasteboard.general.string = body["text"] as? String ?? ""
+        case "share":
+            var items: [Any] = []
+            if let b64 = body["b64"] as? String, let data = Data(base64Encoded: b64, options: .ignoreUnknownCharacters) {
+                let name = (body["name"] as? String ?? "rayli-istanbul.mp4").replacingOccurrences(of: "/", with: "-")
+                let file = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+                if (try? data.write(to: file)) != nil { items.append(file) }
+            }
+            if let t = body["text"] as? String, !t.isEmpty { items.append(t) }
+            if items.isEmpty { break }
+            let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            vc.popoverPresentationController?.sourceView = view
+            present(vc, animated: true)
         case "location":
             if let id = body["id"] as? Int { location.request(id) }
         case "log":

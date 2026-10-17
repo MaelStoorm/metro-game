@@ -27,7 +27,7 @@ import org.json.JSONObject;
 
 /**
  * Google Play uygulama içi satın alma (Play Billing Library 8).
- * Ürünler: jeton_300, jeton_1000 (tüketilen), destekci (bir kez alınır).
+ * Ürünler: jeton_ ve sezon_ ile başlayanlar tüketilir (jeton_300, jeton_1000, sezon_karti); diğerleri bir kez alınır (destekci, baslangic, cift_jeton, gorunum_paketi).
  * Sonuçlar oyuna window.__billing.products / purchased / owned ile döner.
  * Tüm iş ana iş parçacığında yapılır.
  */
@@ -75,7 +75,7 @@ final class Billing implements PurchasesUpdatedListener {
     }
 
     static boolean isConsumable(String id) {
-        return id != null && id.startsWith("jeton_");
+        return id != null && (id.startsWith("jeton_") || id.startsWith("sezon_"));
     }
 
     boolean isReady() {
